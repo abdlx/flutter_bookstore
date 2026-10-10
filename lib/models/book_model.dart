@@ -30,31 +30,31 @@ class Book {
   });
 
   factory Book.fromMap(String id, Map<String, dynamic> m) => Book(
-        id: id,
-        title: m['title'] ?? '',
-        author: m['author'] ?? '',
-        genre: m['genre'] ?? '',
-        description: m['description'] ?? '',
-        coverUrl: m['coverUrl'] ?? '',
-        price: (m['price'] ?? 0).toDouble(),
-        rating: (m['rating'] ?? 0).toDouble(),
-        ratingCount: m['ratingCount'] ?? 0,
-        popularity: m['popularity'] ?? 0,
-        isBestseller: m['isBestseller'] ?? false,
-        createdAt: (m['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      );
+    id: id,
+    title: m['title'] ?? '',
+    author: m['author'] ?? '',
+    genre: m['genre'] ?? '',
+    description: m['description'] ?? '',
+    coverUrl: m['coverUrl'] ?? '',
+    price: (m['price'] ?? 0).toDouble(),
+    rating: (m['rating'] ?? 0).toDouble(),
+    ratingCount: m['ratingCount'] ?? 0,
+    popularity: m['popularity'] ?? 0,
+    isBestseller: m['isBestseller'] ?? false,
+    createdAt: (m['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+  );
 
   Map<String, dynamic> toMap() => {
-        'title': title,
-        'author': author,
-        'genre': genre,
-        'description': description,
-        'coverUrl': coverUrl,
-        'price': price,
-        'rating': rating,
-        'ratingCount': ratingCount,
-        'popularity': popularity,
-        'isBestseller': isBestseller,
-        'createdAt': Timestamp.fromDate(createdAt),
-      };
+    'title': title,
+    'author': author,
+    'genre': genre,
+    'description': description,
+    'coverUrl': coverUrl,
+    'price': price,
+    'rating': rating,
+    'ratingCount': ratingCount,
+    'popularity': popularity,
+    'isBestseller': isBestseller,
+    'createdAt': Timestamp.fromDate(createdAt),
+  };
 }

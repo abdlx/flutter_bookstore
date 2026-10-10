@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
 
@@ -29,7 +30,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message ?? 'Registration failed')));
+          SnackBar(content: Text(e.message ?? 'Registration failed')),
+        );
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -54,8 +56,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       controller: _name,
                       validator: Validators.name,
                       decoration: const InputDecoration(
-                          labelText: 'Full name',
-                          prefixIcon: Icon(Icons.person_outline)),
+                        labelText: 'Full name',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -63,8 +66,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       keyboardType: TextInputType.emailAddress,
                       validator: Validators.email,
                       decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined)),
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -72,8 +76,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       obscureText: true,
                       validator: Validators.password,
                       decoration: const InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock_outline)),
+                        labelText: 'Password',
+                        prefixIcon: Icon(Icons.lock_outline),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
@@ -82,8 +87,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ? const SizedBox(
                               height: 22,
                               width: 22,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Text('Register'),
                     ),
                   ],

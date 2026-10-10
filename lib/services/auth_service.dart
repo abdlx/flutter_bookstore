@@ -10,7 +10,9 @@ class AuthService {
 
   Future<void> register(String name, String email, String password) async {
     final cred = await _auth.createUserWithEmailAndPassword(
-        email: email.trim(), password: password);
+      email: email.trim(),
+      password: password,
+    );
     await cred.user!.updateDisplayName(name.trim());
     await _db.collection('users').doc(cred.user!.uid).set({
       'name': name.trim(),
@@ -22,7 +24,9 @@ class AuthService {
 
   Future<void> login(String email, String password) async {
     await _auth.signInWithEmailAndPassword(
-        email: email.trim(), password: password);
+      email: email.trim(),
+      password: password,
+    );
   }
 
   Future<void> resetPassword(String email) async {

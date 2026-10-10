@@ -1,0 +1,119 @@
+{
+  "meta": {
+    "name": "Bookstore Premium",
+    "version": "1.0.0",
+    "designLanguage": "Warm editorial luxury",
+    "referencePriority": "attached-image"
+  },
+  "colors": {
+    "background": "#FFFCF8",
+    "backgroundWarm": "#F5EBDD",
+    "surface": "#FFFFFF",
+    "surfaceWarm": "#FAF4EB",
+    "surfaceMuted": "#F4F0EA",
+    "primary": "#C99442",
+    "primaryDark": "#A76E24",
+    "primaryLight": "#E6BF82",
+    "accentSoft": "#F9EEDC",
+    "textPrimary": "#191C24",
+    "textSecondary": "#777A80",
+    "textMuted": "#A4A4A8",
+    "border": "#EAE5DD",
+    "divider": "#EEEAE4",
+    "success": "#39815B",
+    "error": "#CC4545",
+    "warning": "#D99B26",
+    "rating": "#F5AE21",
+    "white": "#FFFFFF",
+    "black": "#000000"
+  },
+  "typography": {
+    "families": {
+      "display": "Cormorant Garamond",
+      "body": "Inter"
+    },
+    "weights": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "sizes": {
+      "caption": 11,
+      "small": 12,
+      "bodySmall": 13,
+      "body": 14,
+      "bodyLarge": 16,
+      "subtitle": 18,
+      "sectionTitle": 20,
+      "title": 26,
+      "display": 34
+    },
+    "lineHeight": {
+      "compact": 1.15,
+      "normal": 1.4,
+      "comfortable": 1.6
+    }
+  },
+  "spacing": {
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "base": 16,
+    "lg": 20,
+    "xl": 24,
+    "xxl": 32,
+    "section": 36
+  },
+  "radius": {
+    "small": 8,
+    "medium": 12,
+    "large": 16,
+    "card": 18,
+    "input": 16,
+    "button": 15,
+    "pill": 999
+  },
+  "elevation": {
+    "card": {
+      "blur": 20,
+      "spread": 0,
+      "offsetY": 6,
+      "opacity": 0.05
+    },
+    "floating": {
+      "blur": 28,
+      "spread": 0,
+      "offsetY": 12,
+      "opacity": 0.1
+    }
+  },
+  "components": {
+    "bookCover": {
+      "aspectRatio": 0.68,
+      "radius": 9
+    },
+    "primaryButton": {
+      "height": 54,
+      "radius": 15
+    },
+    "iconButton": {
+      "size": 44,
+      "radius": 22
+    },
+    "bottomNavigation": {
+      "height": 72,
+      "itemCount": 5
+    },
+    "content": {
+      "horizontalPadding": 20,
+      "sectionSpacing": 28
+    }
+  },
+  "motion": {
+    "fastMs": 150,
+    "normalMs": 250,
+    "slowMs": 350,
+    "curve": "easeInOut"
+  }
+}

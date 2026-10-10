@@ -1,0 +1,274 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import 'bookstore_tokens.dart';
+
+class BookstoreThemeData {
+  static ThemeData get lightTheme {
+    final colorScheme = ColorScheme(
+      brightness: Brightness.light,
+      primary: BookstoreTokens.primary,
+      onPrimary: BookstoreTokens.white,
+      primaryContainer: BookstoreTokens.accentSoft,
+      onPrimaryContainer: BookstoreTokens.primaryDark,
+      secondary: BookstoreTokens.primaryDark,
+      onSecondary: BookstoreTokens.white,
+      secondaryContainer: BookstoreTokens.surfaceWarm,
+      onSecondaryContainer: BookstoreTokens.textPrimary,
+      surface: BookstoreTokens.surface,
+      onSurface: BookstoreTokens.textPrimary,
+      surfaceDim: BookstoreTokens.surfaceWarm,
+      surfaceBright: BookstoreTokens.white,
+      surfaceContainerLowest: BookstoreTokens.white,
+      surfaceContainerLow: BookstoreTokens.surfaceWarm,
+      surfaceContainer: BookstoreTokens.surfaceMuted,
+      surfaceContainerHigh: BookstoreTokens.border,
+      surfaceContainerHighest: BookstoreTokens.border,
+      onSurfaceVariant: BookstoreTokens.textSecondary,
+      outline: BookstoreTokens.border,
+      outlineVariant: BookstoreTokens.divider,
+      error: BookstoreTokens.error,
+      onError: BookstoreTokens.white,
+      shadow: BookstoreTokens.black.withValues(alpha: 0.08),
+    );
+
+    final textTheme = TextTheme(
+      // Display: Cormorant Garamond
+      displayLarge: GoogleFonts.cormorantGaramond(
+        fontSize: 34,
+        fontWeight: FontWeight.bold,
+        color: BookstoreTokens.textPrimary,
+        height: 1.15,
+      ),
+      displayMedium: GoogleFonts.cormorantGaramond(
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+        color: BookstoreTokens.textPrimary,
+        height: 1.2,
+      ),
+      displaySmall: GoogleFonts.cormorantGaramond(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: BookstoreTokens.textPrimary,
+        height: 1.25,
+      ),
+      headlineLarge: GoogleFonts.cormorantGaramond(
+        fontSize: 26,
+        fontWeight: FontWeight.bold,
+        color: BookstoreTokens.textPrimary,
+        height: 1.25,
+      ),
+      headlineMedium: GoogleFonts.cormorantGaramond(
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: BookstoreTokens.textPrimary,
+        height: 1.3,
+      ),
+      headlineSmall: GoogleFonts.cormorantGaramond(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: BookstoreTokens.textPrimary,
+        height: 1.3,
+      ),
+      // Inter for UI, body, labels
+      titleLarge: GoogleFonts.inter(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: BookstoreTokens.textPrimary,
+        height: 1.35,
+      ),
+      titleMedium: GoogleFonts.inter(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: BookstoreTokens.textPrimary,
+        height: 1.4,
+      ),
+      titleSmall: GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: BookstoreTokens.textPrimary,
+        height: 1.4,
+      ),
+      bodyLarge: GoogleFonts.inter(
+        fontSize: 16,
+        fontWeight: FontWeight.normal,
+        color: BookstoreTokens.textPrimary,
+        height: 1.5,
+      ),
+      bodyMedium: GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.normal,
+        color: BookstoreTokens.textPrimary,
+        height: 1.5,
+      ),
+      bodySmall: GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.normal,
+        color: BookstoreTokens.textSecondary,
+        height: 1.4,
+      ),
+      labelLarge: GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: BookstoreTokens.textPrimary,
+        letterSpacing: 0.2,
+      ),
+      labelMedium: GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: BookstoreTokens.textSecondary,
+      ),
+      labelSmall: GoogleFonts.inter(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: BookstoreTokens.textMuted,
+        letterSpacing: 0.1,
+      ),
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: BookstoreTokens.background,
+      textTheme: textTheme,
+      fontFamily: GoogleFonts.inter().fontFamily,
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        iconTheme: const IconThemeData(color: BookstoreTokens.textPrimary),
+        titleTextStyle: GoogleFonts.inter(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: BookstoreTokens.textPrimary,
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: BookstoreTokens.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide.none,
+        ),
+        margin: EdgeInsets.zero,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: BookstoreTokens.primary,
+          foregroundColor: BookstoreTokens.white,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          minimumSize: const Size.fromHeight(
+            BookstoreTokens.primaryButtonHeight,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(BookstoreTokens.radiusButton),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: BookstoreTokens.primary,
+          minimumSize: const Size.fromHeight(
+            BookstoreTokens.primaryButtonHeight,
+          ),
+          side: const BorderSide(color: BookstoreTokens.primary, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(BookstoreTokens.radiusButton),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: BookstoreTokens.primary,
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: BookstoreTokens.surfaceMuted,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(BookstoreTokens.radiusInput),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(BookstoreTokens.radiusInput),
+          borderSide: const BorderSide(color: BookstoreTokens.border, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(BookstoreTokens.radiusInput),
+          borderSide: const BorderSide(
+            color: BookstoreTokens.primary,
+            width: 1.5,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(BookstoreTokens.radiusInput),
+          borderSide: const BorderSide(color: BookstoreTokens.error, width: 1),
+        ),
+        hintStyle: GoogleFonts.inter(
+          fontSize: 14,
+          color: BookstoreTokens.textMuted,
+          fontWeight: FontWeight.normal,
+        ),
+        labelStyle: GoogleFonts.inter(
+          fontSize: 14,
+          color: BookstoreTokens.textSecondary,
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: BookstoreTokens.divider,
+        thickness: 1,
+        space: 1,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: BookstoreTokens.surfaceWarm,
+        selectedColor: BookstoreTokens.primary,
+        disabledColor: BookstoreTokens.surfaceMuted,
+        secondarySelectedColor: BookstoreTokens.primary,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(BookstoreTokens.radiusPill),
+          side: BorderSide.none,
+        ),
+        labelStyle: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: BookstoreTokens.textSecondary,
+        ),
+        secondaryLabelStyle: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: BookstoreTokens.white,
+        ),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: BookstoreTokens.surface,
+        selectedItemColor: BookstoreTokens.primary,
+        unselectedItemColor: BookstoreTokens.textMuted,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+        showUnselectedLabels: true,
+      ),
+    );
+  }
+}

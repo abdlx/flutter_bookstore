@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
 import 'register_screen.dart';
@@ -23,9 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await ref
-          .read(authServiceProvider)
-          .login(_email.text, _password.text);
+      await ref.read(authServiceProvider).login(_email.text, _password.text);
     } on FirebaseAuthException catch (e) {
       _msg(e.message ?? 'Login failed');
     } finally {
@@ -46,8 +45,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _msg(String t) => ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(t)));
+  void _msg(String t) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t)));
 
   @override
   Widget build(BuildContext context) {
@@ -66,21 +65,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     Icon(Icons.menu_book_rounded, size: 72, color: cs.primary),
                     const SizedBox(height: 16),
-                    Text('Welcome Back',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineMedium),
+                    Text(
+                      'Welcome Back',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
                     const SizedBox(height: 8),
-                    Text('Login to continue reading',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: cs.onSurfaceVariant)),
+                    Text(
+                      'Login to continue reading',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: cs.onSurfaceVariant),
+                    ),
                     const SizedBox(height: 32),
                     TextFormField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
                       validator: Validators.email,
                       decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined)),
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -91,9 +95,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         labelText: 'Password',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(_hide
-                              ? Icons.visibility_off
-                              : Icons.visibility),
+                          icon: Icon(
+                            _hide ? Icons.visibility_off : Icons.visibility,
+                          ),
                           onPressed: () => setState(() => _hide = !_hide),
                         ),
                       ),
@@ -101,8 +105,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                          onPressed: _forgot,
-                          child: const Text('Forgot password?')),
+                        onPressed: _forgot,
+                        child: const Text('Forgot password?'),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     ElevatedButton(
@@ -111,8 +116,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ? const SizedBox(
                               height: 22,
                               width: 22,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Text('Login'),
                     ),
                     const SizedBox(height: 16),
@@ -122,9 +127,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const Text("Don't have an account?"),
                         TextButton(
                           onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const RegisterScreen())),
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterScreen(),
+                            ),
+                          ),
                           child: const Text('Register'),
                         ),
                       ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/book_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/book_provider.dart';
@@ -45,9 +46,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 12),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(200, 48)),
-                    onPressed: () =>
-                        ref.read(bookServiceProvider).seedBooks(),
+                      minimumSize: const Size(200, 48),
+                    ),
+                    onPressed: () => ref.read(bookServiceProvider).seedBooks(),
                     child: const Text('Add 20 sample books'),
                   ),
                 ],
@@ -55,7 +56,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             );
           }
 
-          final genres = ['All', ...{...list.map((b) => b.genre)}];
+          final genres = [
+            'All',
+            ...{...list.map((b) => b.genre)},
+          ];
           final filtered = _genre == 'All'
               ? list
               : list.where((b) => b.genre == _genre).toList();
@@ -72,7 +76,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   scrollDirection: Axis.horizontal,
                   itemCount: genres.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (_, i) => ChoiceChip(
                     label: Text(genres[i]),
                     selected: _genre == genres[i],
@@ -96,11 +100,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-          child: Text(title,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
         ),
         SizedBox(
           height: 285,
@@ -108,7 +112,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
             itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            separatorBuilder: (_, _) => const SizedBox(width: 14),
             itemBuilder: (_, i) => BookCard(book: items[i]),
           ),
         ),

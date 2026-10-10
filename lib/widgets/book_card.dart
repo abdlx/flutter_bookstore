@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+
 import '../models/book_model.dart';
 
 class BookCard extends StatelessWidget {
@@ -26,9 +27,9 @@ class BookCard extends StatelessWidget {
                   height: 190,
                   width: 140,
                   fit: BoxFit.cover,
-                  placeholder: (_, __) =>
+                  placeholder: (_, _) =>
                       Container(height: 190, color: cs.surfaceContainerHighest),
-                  errorWidget: (_, __, ___) => Container(
+                  errorWidget: (_, _, _) => Container(
                     height: 190,
                     color: cs.surfaceContainerHighest,
                     child: const Icon(Icons.book, size: 40),
@@ -37,23 +38,31 @@ class BookCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(book.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w600)),
-            Text(book.author,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            Text(
+              book.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            Text(
+              book.author,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+            ),
             const SizedBox(height: 4),
             Row(
               children: [
                 const Icon(Icons.star_rounded, size: 16, color: Colors.amber),
                 Text(' ${book.rating}', style: const TextStyle(fontSize: 12)),
                 const Spacer(),
-                Text('\$${book.price.toStringAsFixed(0)}',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: cs.primary)),
+                Text(
+                  '\$${book.price.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: cs.primary,
+                  ),
+                ),
               ],
             ),
           ],
