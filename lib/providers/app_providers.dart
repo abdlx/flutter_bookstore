@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/models/address.dart';
@@ -16,56 +18,60 @@ import '../data/contracts/payment_method_repository.dart';
 import '../data/contracts/profile_repository.dart';
 import '../data/contracts/review_repository.dart';
 import '../data/contracts/wishlist_repository.dart';
-import '../data/mock/mock_address_repository.dart';
-import '../data/mock/mock_admin_repository.dart';
-import '../data/mock/mock_auth_repository.dart';
-import '../data/mock/mock_book_repository.dart';
-import '../data/mock/mock_cart_repository.dart';
-import '../data/mock/mock_order_repository.dart';
-import '../data/mock/mock_payment_method_repository.dart';
-import '../data/mock/mock_profile_repository.dart';
-import '../data/mock/mock_review_repository.dart';
-import '../data/mock/mock_wishlist_repository.dart';
+import '../data/services/firebase_address_repository.dart';
+import '../data/services/firebase_admin_repository.dart';
+import '../data/services/firebase_auth_repository.dart';
+import '../data/services/firebase_book_repository.dart';
+import '../data/services/firebase_cart_repository.dart';
+import '../data/services/firebase_order_repository.dart';
+import '../data/services/firebase_payment_method_repository.dart';
+import '../data/services/firebase_profile_repository.dart';
+import '../data/services/firebase_review_repository.dart';
+import '../data/services/firebase_wishlist_repository.dart';
 
-// Singletons / Repositories
+// Firebase core providers
+final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
+final firebaseFirestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+
+// Singletons / Repositories (Firebase implementations)
 final authRepositoryProvider = Provider<AuthRepository>(
-  (ref) => MockAuthRepository(),
+  (ref) => FirebaseAuthRepository(),
 );
 
 final bookRepositoryProvider = Provider<BookRepository>(
-  (ref) => MockBookRepository(),
+  (ref) => FirebaseBookRepository(),
 );
 
 final cartRepositoryProvider = Provider<CartRepository>(
-  (ref) => MockCartRepository(),
+  (ref) => FirebaseCartRepository(),
 );
 
 final wishlistRepositoryProvider = Provider<WishlistRepository>(
-  (ref) => MockWishlistRepository(),
+  (ref) => FirebaseWishlistRepository(),
 );
 
 final orderRepositoryProvider = Provider<OrderRepository>(
-  (ref) => MockOrderRepository(),
+  (ref) => FirebaseOrderRepository(),
 );
 
 final reviewRepositoryProvider = Provider<ReviewRepository>(
-  (ref) => MockReviewRepository(),
+  (ref) => FirebaseReviewRepository(),
 );
 
 final profileRepositoryProvider = Provider<ProfileRepository>(
-  (ref) => MockProfileRepository(),
+  (ref) => FirebaseProfileRepository(),
 );
 
 final addressRepositoryProvider = Provider<AddressRepository>(
-  (ref) => MockAddressRepository(),
+  (ref) => FirebaseAddressRepository(),
 );
 
 final paymentMethodRepositoryProvider = Provider<PaymentMethodRepository>(
-  (ref) => MockPaymentMethodRepository(),
+  (ref) => FirebasePaymentMethodRepository(),
 );
 
 final adminRepositoryProvider = Provider<AdminRepository>(
-  (ref) => MockAdminRepository(),
+  (ref) => FirebaseAdminRepository(),
 );
 
 // Reactive Data Streams

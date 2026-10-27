@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // USERS
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      // register par role sirf 'user' ho sakta hai
+      allow create: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.role == 'user';
+      // user apna role nahi badal sakta, admin kisi ka bhi badal sakta hai
+      allow update: if signedIn() && (
+        isAdmin() ||
+        (request.auth.uid == uid &&
+         request.resource.data.role == resource.data.role)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // BOOKS
+    match /books/{bookId} {
+      allow read: if signedIn();
+      allow create, delete: if isAdmin();
+      // admin sab kuch, aur koi bhi login user sirf rating fields (review ke baad)
+      allow update: if isAdmin() ||
+        (signedIn() &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['rating', 'ratingCount']));
+
+      // REVIEWS
+      match /reviews/{reviewId} {
+        allow read: if signedIn();
+        // review ki doc id user ki apni uid hoti hai
+        allow create: if signedIn() && reviewId == request.auth.uid
+                      && request.resource.data.userId == request.auth.uid;
+        allow update: if signedIn() && (
+          reviewId == request.auth.uid ||
+          // doosre users sirf likes badal sakte hain
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+        );
+        allow delete: if isAdmin() || (signedIn() && reviewId == request.auth.uid);
+      }
+    }
+
+    // ORDERS
+    match /orders/{orderId} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'placed';
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // WISHLIST
+    match /wishlists/{uid}/books/{bookId} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+  }
+}
