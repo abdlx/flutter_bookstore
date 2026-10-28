@@ -28,7 +28,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final booksAsync = ref.watch(allBooksStreamProvider);
+    final booksAsync = ref.watch(bookDetailsProvider(widget.bookId));
     final wishlistAsync = ref.watch(wishlistStreamProvider);
     final wishlistRepo = ref.read(wishlistRepositoryProvider);
     final cartRepo = ref.read(cartRepositoryProvider);
@@ -41,8 +41,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         ),
       ),
       error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
-      data: (books) {
-        final book = books.where((b) => b.id == widget.bookId).firstOrNull;
+      data: (book) {
         if (book == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Book unavailable')),

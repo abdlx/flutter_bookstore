@@ -57,7 +57,7 @@ class _OrderManagementScreenState extends ConsumerState<OrderManagementScreen> {
                     vertical: 10,
                   ),
                 ),
-                items: OrderStatus.values.map((s) {
+                items: [order.status, ...order.status.nextStatuses].map((s) {
                   return DropdownMenuItem(
                     value: s,
                     child: Text(s.name.toUpperCase()),

@@ -162,6 +162,20 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: 10),
               const SizedBox(height: 20),
 
+              _MenuTile(
+                icon: Icons.description_outlined,
+                title: 'Terms of Service',
+                subtitle: 'Read the project terms',
+                onTap: () => context.push('/policies/terms'),
+              ),
+              const SizedBox(height: 10),
+              _MenuTile(
+                icon: Icons.privacy_tip_outlined,
+                title: 'Privacy Policy',
+                subtitle: 'How your information is used',
+                onTap: () => context.push('/policies/privacy'),
+              ),
+              const SizedBox(height: 20),
               // Logout Button
               _MenuTile(
                 icon: Icons.logout_rounded,

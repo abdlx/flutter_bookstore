@@ -45,7 +45,11 @@ class FirebaseAuthRepository implements AuthRepository {
     yield* _changes.stream;
   }
 
-  Future<UserProfile> _ensureProfile(User user, {String? fullName}) async {
+  Future<UserProfile> _ensureProfile(
+    User user, {
+    String? fullName,
+    Map<String, dynamic>? acceptance,
+  }) async {
     final doc = db.collection('users').doc(user.uid);
     final data = await db.runTransaction<Map<String, dynamic>>((tx) async {
       final snapshot = await tx.get(doc);
@@ -65,6 +69,7 @@ class FirebaseAuthRepository implements AuthRepository {
         'memberSince': Timestamp.now(),
         'phone': null,
         'avatarUrl': user.photoURL,
+        'policyAcceptance': ?acceptance,
       };
       tx.set(doc, profile);
       return profile;
@@ -89,12 +94,29 @@ class FirebaseAuthRepository implements AuthRepository {
     String email,
     String password,
   ) async {
+    final policies = await Future.wait(
+      ['terms', 'privacy'].map((id) => db.collection('policies').doc(id).get()),
+    );
+    if (policies.any((p) => !p.exists)) {
+      throw StateError(
+        'The project policies are not available. Please try again later.',
+      );
+    }
+    final acceptance = <String, dynamic>{
+      'termsVersion': policies[0].data()!['version'],
+      'privacyVersion': policies[1].data()!['version'],
+      'acceptedAt': FieldValue.serverTimestamp(),
+    };
     final result = await auth.createUserWithEmailAndPassword(
       email: email.trim(),
       password: password,
     );
     await result.user!.updateDisplayName(fullName.trim());
-    return _ensureProfile(result.user!, fullName: fullName.trim());
+    return _ensureProfile(
+      result.user!,
+      fullName: fullName.trim(),
+      acceptance: acceptance,
+    );
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'referenced_books.dart';
+
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -190,19 +192,22 @@ class FirestoreCartRepository implements CartRepository {
   Map<String, dynamic> _settings = {};
   Map<String, dynamic>? _promo;
   String? promoCode;
+  late final _bookWatcher = ReferencedBooks(
+    store.db,
+    onData: (books) {
+      _books = books;
+      _booksLoaded = true;
+      _emit();
+    },
+    onError: _changes.addError,
+  );
   FirestoreCartRepository(this.store) {
     if (store.uid == null) return;
     _subscriptions.add(
-      store.db.collection('books').snapshots().listen((s) {
-        _books = {for (final d in s.docs) d.id: readBook(d.id, d.data())};
-        _booksLoaded = true;
-        _emit();
-      }, onError: _changes.addError),
-    );
-    _subscriptions.add(
       store.collection('cart').snapshots().listen((s) {
         _rows = s.docs;
-        _emit();
+        _booksLoaded = false;
+        _bookWatcher.watch(_rows.map((d) => d.id));
       }, onError: _changes.addError),
     );
     _subscriptions.add(
@@ -354,6 +359,7 @@ class FirestoreCartRepository implements CartRepository {
   }
 
   Future<void> dispose() async {
+    if (store.uid != null) await _bookWatcher.dispose();
     for (final s in _subscriptions) {
       await s.cancel();
     }
@@ -367,18 +373,20 @@ class FirestoreWishlistRepository implements WishlistRepository {
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   Set<String> _ids = {};
   Map<String, BookItem> _books = {};
+  late final _bookWatcher = ReferencedBooks(
+    store.db,
+    onData: (books) {
+      _books = books;
+      _emit();
+    },
+    onError: _changes.addError,
+  );
   FirestoreWishlistRepository(this.store) {
     if (store.uid == null) return;
     _subscriptions.add(
       store.collection('wishlist').snapshots().listen((s) {
         _ids = s.docs.map((d) => d.id).toSet();
-        _emit();
-      }, onError: _changes.addError),
-    );
-    _subscriptions.add(
-      store.db.collection('books').snapshots().listen((s) {
-        _books = {for (final d in s.docs) d.id: readBook(d.id, d.data())};
-        _emit();
+        _bookWatcher.watch(_ids);
       }, onError: _changes.addError),
     );
   }
@@ -412,6 +420,7 @@ class FirestoreWishlistRepository implements WishlistRepository {
   Future<void> removeFromWishlist(String id) =>
       store.collection('wishlist').doc(id).delete();
   Future<void> dispose() async {
+    if (store.uid != null) await _bookWatcher.dispose();
     for (final s in _subscriptions) {
       await s.cancel();
     }

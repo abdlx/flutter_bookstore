@@ -19,22 +19,27 @@ Interfaces remain in `lib/data/contracts/`. `lib/providers/app_providers.dart` b
 | PaymentMethodRepository | FirestorePaymentMethodRepository | users/{uid}/paymentMethods |
 | AdminRepository | FirestoreAdminRepository | protected inventory, fulfillment, user roles and dashboard queries |
 
-Customer repositories are scoped to the authenticated UID. Their subscriptions are disposed on account changes. Catalog, cart, wishlist, address, payment, order-list and individual-order screens use snapshots. Search and genre choices derive from the actual catalog. Empty collections stay empty.
+Customer repositories are scoped to the authenticated UID. Reviews, helpful selections, administrator statistics and the user directory also use live snapshots. Cart and wishlist book subscriptions read only their referenced titles in groups of up to 30 IDs, not the full catalog. Their subscriptions are disposed on account changes. Catalog, cart, wishlist, address, payment, order-list and individual-order screens use snapshots. Search and genre choices derive from the actual catalog. Empty collections stay empty.
 
 ## Firestore schema
 
 | Path | Fields |
 | --- | --- |
 | books/{bookId} | title, author, genre, tags, description, coverUrl, price, optional originalPrice, format, pages, language, publisher, stockQuantity, publishedDate (Timestamp or ISO string), isBestseller, isRecommended |
-| books/{bookId}/reviews/{uid} | userId, userName, userAvatar, rating (integer 1-5), content, createdAt, helpfulCount |
+| books/{bookId}/reviews/{uid} | userId, userName, userAvatar, rating (integer 1-5), content, createdAt, helpfulCount, helpfulBy (voter UID -> true) |
 | users/{uid} | fullName, email, phone, avatarUrl, role (customer/admin), membershipTier, memberSince; optional addressesDefaultId/paymentMethodsDefaultId |
 | users/{uid}/cart/{bookId} | bookId, quantity |
 | users/{uid}/wishlist/{bookId} | bookId |
 | users/{uid}/addresses/{addressId} | label, recipientName, phone, street, city, state, postalCode, country, isDefault |
 | users/{uid}/paymentMethods/{methodId} | type (cod), title, subtitle, isDefault |
+| catalog/metadata | genres and genreCounts maintained transactionally during administrator inventory changes |
+| media/{randomId} | ownerId, purpose (avatar/cover), contentType, base64 PNG data, createdAt |
+| policies/{terms,privacy} | title, content, version, updatedAt |
 | settings/store | freeShippingThreshold, shippingFee, taxRate (decimal fraction); optional storefrontUrl for copied book links |
 | promotions/{UPPERCASE_CODE} | active, type (fixed/percent), amount, optional minimumSubtotal, optional expiresAt (Timestamp) |
 | orders/{orderId} | userId, orderNumber, items (bookId/quantity/immutable book snapshot), itemIndex, addressId/shippingAddress, paymentMethodId/paymentMethod, subtotal/shipping/tax/discount/total, promoCode, createdAt, status, paymentStatus, statusHistory |
+
+Book documents additionally contain searchTokens, ratingScore and reviewTotal for indexed paging; the latter two mirror the protected review aggregates. New registrations record policyAcceptance with termsVersion, privacyVersion and a server acceptance timestamp.
 
 Document IDs are authoritative. Cart and wishlist records hold book references, not trusted prices. Reviews maintain rating, reviewCount, ratingCounts and ratingBreakdown on books. These aggregates can change only with a valid matching review transaction. lastOrderId is an internal stock-write linkage; administrator forms preserve it.
 
@@ -56,7 +61,15 @@ Fulfillment allows placed -> confirmed -> processing -> shipped -> delivered, wi
 
 Email/password registration, login, password reset, persisted sessions and verified email changes use Firebase Auth. New profiles are customers. The application has no demo role switch, default login, self-promotion or fake membership/revenue data. Administrators may change another user's role; the rules prevent changing their own role.
 
-`firestore.rules` permits public book/review/store-settings reads, owner-only private customer data, and administrator inventory/user/fulfillment management. Unspecified paths are denied. Current queries require no composite indexes: customer orders filter by userId and sort locally.
+`firestore.rules` permits public book/review/store-settings reads, owner-only private customer data, and administrator inventory/user/fulfillment management. Unspecified paths are denied. Customer orders filter by userId and sort locally. Cursor-paged catalog and search queries use the composite indexes in firestore.indexes.json. Search uses the first normalized word prefix as an indexed array query; additional words and the optional price ceiling filter the returned pages. This is a school-project keyword search, without an external fuzzy-search service. Each page reads at most 24 candidate documents. Home recommendations/bestsellers/latest feeds are separately bounded; book details read their individual document.
+
+Helpful voting uses a transaction with a per-account map entry and an atomic count increment. Rules restrict changes to the signed-in voter, reject self-voting, and require the count to equal the map size. Review edits preserve votes. Each review supports up to 10,000 helpful voters.
+
+Admin -> Promotions supports code creation, fixed/percentage discounts, minimum subtotal, optional expiry, active state, editing and deletion. Rules validate these fields and prevent customers changing offers.
+
+Admin -> Terms & Privacy publishes the policy pages linked from registration and profile. The project policies describe the implemented school-project data handling; new registrations record their published versions.
+
+Photo uploads accept images up to 10 MB, resize to a maximum 768-pixel edge and at most 450,000 PNG bytes, and store the result in separate Firestore media documents. Immutable media references work in covers, avatars and reviews. Only administrators may upload covers; account holders may upload their own avatars. The image data field is excluded from indexing. This keeps uploads on the chosen Spark setup, without enabling Cloud Storage or embedding image bytes in order snapshots.
 
 ## Project setup
 
@@ -64,8 +77,8 @@ The project's original expired test rules were replaced with this application's 
 
 1. Basic Firebase Authentication is initialized and Email/Password is enabled in the selected project. Basic authentication and the bookstore do not require upgrading to Blaze. The public Identity Platform initialization API is a different, billing-gated setup path.
 2. The owner's registered account has been assigned its first administrator role through the authenticated project-owner API. For a new project, register the intended administrator and set only that real user's users/{uid}.role to admin through a trusted owner environment. Additional roles can then be managed in the app.
-3. Use Admin -> Store Settings to create settings/store using the store's real shipping/tax policies (or write the document through a trusted owner environment). Checkout stays disabled while settings are absent.
-4. Add actual inventory in the administrator book form, including stock and recommendation flags. Add actual promotion documents if required.
+3. The school project now has persisted, editable settings/store values: USD 5 shipping, free shipping at USD 50 item subtotal, and zero tax. These are project configuration values, not runtime fallback data. Change them in Admin -> Store Settings. Checkout stays disabled if that document is removed.
+4. Add actual inventory in the administrator book form, including stock and recommendation flags. Create any desired discount codes through Admin -> Promotions. No sample promotions or inventory were inserted into the live project.
 
 The app never seeds commercial records or silently falls back to an emulator. Source-controlled platform configurations do not contain service-account private keys. Do not commit CLI credentials, access tokens or service-account files.
 
@@ -78,7 +91,7 @@ flutter test
 flutter build web
 flutter build apk --debug --target-platform android-arm64
 npm --prefix firebase_tests ci
-npx firebase-tools emulators:exec --project demo-bookstore --only firestore "node --test firebase_tests/test/emulator.test.js"
+npx firebase-tools emulators:exec --project demo-bookstore --only auth,firestore "node --test firebase_tests/test/emulator.test.js"
 npx firebase-tools deploy --only firestore:rules,firestore:indexes --project flutter-project1-86917
 ```
 
@@ -94,3 +107,5 @@ flutter run -d chrome --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=FI
 Use FIREBASE_EMULATOR_HOST=10.0.2.2 for an Android emulator. Production uses Firebase directly and reports initialization failures instead of bypassing them.
 
 Reference: [Firestore transactions and getAfter validation](https://firebase.google.com/docs/firestore/manage-data/transactions), [security-rule limits](https://firebase.google.com/docs/firestore/quotas).
+
+The project policy pages and store configuration were initialized without overwriting existing records. Existing catalog records can be migrated to the search fields by an authenticated project owner; the live project contained zero books during this migration.

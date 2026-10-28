@@ -68,32 +68,58 @@ service cloud.firestore {
    let total=c1+c2+c3+c4+c5;
    return d.ratingCounts.keys().hasOnly(['1','2','3','4','5'])
     && correctCount(before,'1',1,prior,score,c1) && correctCount(before,'2',2,prior,score,c2) && correctCount(before,'3',3,prior,score,c3) && correctCount(before,'4',4,prior,score,c4) && correctCount(before,'5',5,prior,score,c5)
+    && d.get('ratingScore',d.rating) == d.rating && d.get('reviewTotal',d.reviewCount) == d.reviewCount
     && d.reviewCount == total && d.rating == (c1+c2*2+c3*3+c4*4+c5*5) / float(total)
     && d.ratingBreakdown.keys().hasOnly(['1','2','3','4','5']) && d.ratingBreakdown['1']==c1 / float(total) && d.ratingBreakdown['2']==c2 / float(total) && d.ratingBreakdown['3']==c3 / float(total) && d.ratingBreakdown['4']==c4 / float(total) && d.ratingBreakdown['5']==c5 / float(total);
   }
   function reviewAggregate(bookId) {
    let r=getAfter(/databases/$(database)/documents/books/$(bookId)/reviews/$(request.auth.uid)).data;
-   return signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating','reviewCount','ratingCounts','ratingBreakdown'])
+   return signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating','reviewCount','ratingCounts','ratingBreakdown','ratingScore','reviewTotal'])
     && r.createdAt==request.time && r.rating is int && r.rating>=1 && r.rating<=5
     && validReviewBook(bookId,resource.data,request.resource.data,r.rating);
   }
   match /books/{bookId} {
    allow read: if true;
-   allow create: if admin() && validBook() && !request.resource.data.keys().hasAny(['rating','reviewCount','ratingBreakdown','ratingCounts','lastOrderId']);
-   allow update: if (admin() && validBook() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rating','reviewCount','ratingBreakdown','ratingCounts','lastOrderId'])) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stockQuantity','lastOrderId']) && checkoutStock(bookId)) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating','reviewCount','ratingCounts','ratingBreakdown']) && reviewAggregate(bookId));
+   allow create: if admin() && validBook() && !request.resource.data.keys().hasAny(['rating','reviewCount','ratingBreakdown','ratingCounts','lastOrderId']) && request.resource.data.get('ratingScore',0)==0 && request.resource.data.get('reviewTotal',0)==0;
+   allow update: if (admin() && validBook() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rating','reviewCount','ratingBreakdown','ratingCounts','lastOrderId','ratingScore','reviewTotal'])) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stockQuantity','lastOrderId']) && checkoutStock(bookId)) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating','reviewCount','ratingCounts','ratingBreakdown','ratingScore','reviewTotal']) && reviewAggregate(bookId));
    allow delete: if admin();
    function validBook() { let d=request.resource.data; return d.title is string && d.title.size()>0 && d.author is string && d.author.size()>0 && d.price is number && d.price>=0 && d.stockQuantity is int && d.stockQuantity>=0; }
    match /reviews/{reviewId} {
     allow read: if true;
     allow create, update: if owner(reviewId)
-     && request.resource.data.keys().hasOnly(['userId','userName','userAvatar','rating','content','createdAt','helpfulCount'])
+     && request.resource.data.keys().hasOnly(['userId','userName','userAvatar','rating','content','createdAt','helpfulCount','helpfulBy'])
      && request.resource.data.userId == request.auth.uid && request.resource.data.rating is int && request.resource.data.rating>=1 && request.resource.data.rating<=5
      && request.resource.data.content is string && request.resource.data.content.size()>0 && request.resource.data.content.size()<=4000
-     && request.resource.data.createdAt==request.time && request.resource.data.helpfulCount==0
+     && request.resource.data.createdAt==request.time && request.resource.data.helpfulCount == (resource == null ? 0 : resource.data.helpfulCount)
+     && request.resource.data.get('helpfulBy',{}) == (resource == null ? {} : resource.data.get('helpfulBy',{}))
      && request.resource.data.userName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.fullName
      && request.resource.data.userAvatar == (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('avatarUrl',null)==null ? '' : get(/databases/$(database)/documents/users/$(request.auth.uid)).data.avatarUrl)
      && validReviewBook(bookId,get(/databases/$(database)/documents/books/$(bookId)).data,getAfter(/databases/$(database)/documents/books/$(bookId)).data,request.resource.data.rating);
+    allow update: if signedIn() && request.auth.uid != reviewId && validHelpfulChange();
+    function validHelpfulChange() {
+     let before=resource.data.get('helpfulBy',{});
+     let after=request.resource.data.helpfulBy;
+     let voted=after.keys().hasAny([request.auth.uid]);
+     return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['helpfulBy','helpfulCount'])
+      && after is map && after.size()<=10000
+      && after.diff(before).affectedKeys().hasOnly([request.auth.uid])
+      && voted != before.keys().hasAny([request.auth.uid])
+      && (!voted || after[request.auth.uid] == true)
+      && request.resource.data.helpfulCount == after.size()
+      && request.resource.data.helpfulCount == resource.data.helpfulCount + (voted ? 1 : -1);
+    }
+
    }
+  }
+  match /catalog/{id} { allow read: if id=='metadata'; allow write: if admin() && id=='metadata'; }
+  match /media/{id} {
+   allow read: if true;
+   allow create: if signedIn() && request.resource.data.keys().hasOnly(['ownerId','purpose','contentType','data','createdAt'])
+    && request.resource.data.ownerId == request.auth.uid
+    && request.resource.data.purpose in ['avatar','cover'] && (request.resource.data.purpose != 'cover' || admin())
+    && request.resource.data.contentType == 'image/png' && request.resource.data.data is string
+    && request.resource.data.data.size()>0 && request.resource.data.data.size()<=600000
+    && request.resource.data.createdAt==request.time;
   }
   match /settings/{id} {
    allow read: if id == 'store' || admin();
@@ -108,10 +134,33 @@ service cloud.firestore {
      && d.get('storefrontUrl','') is string;
    }
   }
-  match /promotions/{id} { allow get: if signedIn(); allow list: if admin(); allow write: if admin(); }
+  match /promotions/{id} {
+   allow get: if signedIn(); allow list, delete: if admin();
+   allow create, update: if admin() && id.matches('^[A-Z0-9_-]{2,40}$')
+    && request.resource.data.keys().hasOnly(['active','type','amount','minimumSubtotal','expiresAt'])
+    && request.resource.data.active is bool && request.resource.data.type in ['fixed','percent']
+    && request.resource.data.amount is number && request.resource.data.amount > 0
+    && (request.resource.data.type != 'percent' || request.resource.data.amount <= 100)
+    && request.resource.data.get('minimumSubtotal',0) is number && request.resource.data.get('minimumSubtotal',0) >= 0
+    && (!request.resource.data.keys().hasAny(['expiresAt']) || request.resource.data.expiresAt is timestamp);
+  }
+  match /policies/{id} {
+   allow read: if id in ['terms','privacy'];
+   allow create, update: if admin() && id in ['terms','privacy']
+    && request.resource.data.keys().hasOnly(['title','content','version','updatedAt'])
+    && request.resource.data.title is string && request.resource.data.title.size()>0 && request.resource.data.title.size()<=120
+    && request.resource.data.content is string && request.resource.data.content.size()>0 && request.resource.data.content.size()<=50000
+    && request.resource.data.version is string && request.resource.data.version.size()>0 && request.resource.data.version.size()<=80
+    && request.resource.data.updatedAt == request.time;
+  }
   match /users/{uid} {
    allow read: if owner(uid) || admin();
-   allow create: if owner(uid) && request.resource.data.keys().hasOnly(['fullName','email','role','membershipTier','memberSince','phone','avatarUrl']) && request.resource.data.role=='customer' && request.resource.data.membershipTier=='Member' && request.resource.data.email==request.auth.token.email;
+   allow create: if owner(uid) && request.resource.data.keys().hasOnly(['fullName','email','role','membershipTier','memberSince','phone','avatarUrl','policyAcceptance']) && request.resource.data.role=='customer' && request.resource.data.membershipTier=='Member' && request.resource.data.email==request.auth.token.email
+    && (!request.resource.data.keys().hasAny(['policyAcceptance']) ||
+      (request.resource.data.policyAcceptance.keys().hasOnly(['termsVersion','privacyVersion','acceptedAt'])
+       && request.resource.data.policyAcceptance.acceptedAt==request.time
+       && request.resource.data.policyAcceptance.termsVersion==get(/databases/$(database)/documents/policies/terms).data.version
+       && request.resource.data.policyAcceptance.privacyVersion==get(/databases/$(database)/documents/policies/privacy).data.version));
    allow update: if (owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName','email','phone','avatarUrl','updatedAt','addressesDefaultId','paymentMethodsDefaultId']) && request.resource.data.email==request.auth.token.email)
     || (admin() && !owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role']) && request.resource.data.role in ['admin','customer']);
    match /cart/{bookId} {

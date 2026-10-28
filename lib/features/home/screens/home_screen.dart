@@ -23,9 +23,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    final booksAsync = ref.watch(allBooksStreamProvider);
-    final userAsync = ref.watch(currentUserStreamProvider);
     final selectedGenre = ref.watch(selectedGenreProvider);
+    final booksAsync = ref.watch(homeBooksProvider(selectedGenre));
+    final userAsync = ref.watch(currentUserStreamProvider);
 
     final user = userAsync.value;
     final userName = user?.fullName.split(' ').first ?? 'Reader';
@@ -37,7 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: RefreshIndicator(
           color: BookstoreTokens.primary,
           onRefresh: () async {
-            ref.invalidate(allBooksStreamProvider);
+            ref.invalidate(homeBooksProvider(selectedGenre));
           },
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),

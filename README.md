@@ -20,9 +20,11 @@ flutter analyze
 flutter test
 flutter build web
 npm --prefix firebase_tests ci
-npx firebase-tools emulators:exec --project demo-bookstore --only firestore "node --test firebase_tests/test/emulator.test.js"
+npx firebase-tools emulators:exec --project demo-bookstore --only auth,firestore "node --test firebase_tests/test/emulator.test.js"
 ```
 
 Firestore emulator tests require Java 21+. Test fixture data is isolated from the configured Firebase project.
 
 Cormorant Garamond and Inter fonts are bundled with their OFL licenses in `assets/fonts/`.
+
+Administrator features include inventory, fulfillment, user roles, shipping/tax configuration, promotions and published policy pages. Customers can upload profile photos and book reviewers can cast secure helpful votes. Catalog and keyword search use Firestore indexes and 24-document cursor pages. See [implementation status](docs/IMPLEMENTATION_STATUS.md) for scope and verification.

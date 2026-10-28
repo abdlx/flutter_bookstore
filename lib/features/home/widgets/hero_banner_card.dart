@@ -10,7 +10,9 @@ class HeroBannerCard extends ConsumerWidget {
   const HeroBannerCard({super.key, required this.onShopNow});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final books = ref.watch(allBooksStreamProvider).value ?? [];
+    final books =
+        ref.watch(homeBooksProvider(ref.watch(selectedGenreProvider))).value ??
+        [];
     final featured = books
         .where((b) => b.isRecommended && b.stockQuantity > 0)
         .firstOrNull;

@@ -1,3 +1,6 @@
+import '../../features/admin/screens/promotion_management_screen.dart';
+import '../../features/policies/policy_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -59,7 +62,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/home' ||
           path == '/explore' ||
           path == '/search' ||
-          path.startsWith('/book/');
+          path.startsWith('/book/') ||
+          path == '/policies/terms' ||
+          path == '/policies/privacy';
       if (!signedIn && !publicPage) {
         return '/login?from=${Uri.encodeComponent(state.uri.toString())}';
       }
@@ -261,6 +266,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AddEditPaymentScreen(),
       ),
 
+      GoRoute(
+        path: '/policies/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            PolicyScreen(id: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/admin/promotions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PromotionManagementScreen(),
+      ),
+      GoRoute(
+        path: '/admin/policies',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PolicyEditorScreen(),
+      ),
       // Admin Module
       GoRoute(
         path: '/admin',

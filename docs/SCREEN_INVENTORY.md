@@ -16,9 +16,9 @@ This inventory documents all 24 primary screens, auxiliary sheets, and their sup
 |---|---|---|---|---|
 | 6 | Home / Discover (**Reference Screen 1**) | `/home` | Complete | Greeting, user avatar, search trigger, horizontal genre filters, Firestore recommendation banner, recommended carousel, best sellers, add to cart, bottom navigation |
 | 7 | Book Catalog / Explore | `/explore` | Complete | Grid / List view switcher, category chips filter, dynamic counts, direct cart addition, navigation to book details |
-| 8 | Search Results & Filtering | `/search` | Complete | Real-time text search across title & author, filter bottom sheet (genre, price slider, sort order), empty search fallback |
+| 8 | Search Results & Filtering | `/search` | Complete | Real-time text search across title & author, filter bottom sheet (genre, maximum price, sort order), indexed 24-document pages, empty search fallback |
 | 9 | Book Details (**Reference Screen 2**) | `/book/:id` | Complete | Warm beige canvas, floating shadow cover, wishlist toggle, copy book link, bestseller badge, category tags, 3-column metadata panel, expandable description, customer reviews breakdown, persistent quantity stepper, gold Add to Cart |
-| 10 | Ratings & Reviews | `/book/:id/reviews` | Complete | Overall score, star distribution breakdown, review cards with helpful counts, Write Review modal sheet with interactive star rating & submission |
+| 10 | Ratings & Reviews | `/book/:id/reviews` | Complete | Overall score, star distribution breakdown, live review cards with per-account helpful voting, Write Review modal sheet with interactive star rating & submission |
 | 11 | Saved Wishlist | `/wishlist` | Complete | Saved book items, remove from wishlist, instant move-to-cart, empty state |
 | 12 | Shopping Cart (**Reference Screen 3**) | `/cart` | Complete | Free shipping progress bar calculation from Firestore shipping settings, rounded item cards, quantity steppers, item deletion, promo code modal sheet validated against Firestore promotions, cost breakdown with cent precision, Proceed to Checkout CTA |
 | 13 | Checkout | `/checkout` | Complete | Delivery address selection, payment method selection, order items summary, order summary calculations, atomic place-order processing (up to five distinct titles) |
@@ -30,7 +30,7 @@ This inventory documents all 24 primary screens, auxiliary sheets, and their sup
 | 15 | My Orders | `/orders` | Complete | Orders list with status badges (Shipped, Delivered), date placed, items count, total, tap to track |
 | 16 | Order Details & Delivery Tracking | `/orders/:id` | Complete | Multi-stage vertical tracking timeline, delivery address details, order items breakdown, payment summary |
 | 17 | My Profile | `/profile` | Complete | Profile card with tier badge, navigation to sub-settings, logout confirmation dialog |
-| 18 | Edit Profile | `/profile/edit` | Complete | Name, verified email change, phone and avatar URL editing, validation, save |
+| 18 | Edit Profile | `/profile/edit` | Complete | Name, verified email change, phone, avatar URL and gallery photo uploading, validation, save |
 | 19 | Address Management | `/profile/addresses` | Complete | Address cards, set as default toggle, delete address, add address CTA |
 | — | Add / Edit Address | `/profile/addresses/edit` | Complete | Form with label, recipient, street, city, state, postal code, country, default switch |
 | 20 | Payment Methods | `/profile/payments` | Complete | Persisted cash-on-delivery method, set default, delete, add payment CTA |
@@ -41,8 +41,10 @@ This inventory documents all 24 primary screens, auxiliary sheets, and their sup
 |---|---|---|---|---|
 | 21 | Admin Dashboard | `/admin` | Complete | Revenue, orders, catalog and user stats cards, module navigation, Firestore status notice |
 | 22 | Book Management | `/admin/books` | Complete | Inventory search, stock counts, bestseller badges, edit book, delete with dialog, add book CTA |
-| — | Add / Edit Book Form | `/admin/books/edit` | Complete | Form with title, author, genre, price, orig price, cover URL, stock count, publisher, pages, format, language, publication date, bestseller/recommendation switches |
+| — | Add / Edit Book Form | `/admin/books/edit` | Complete | Form with title, author, genre, price, orig price, cover URL/upload, stock count, publisher, pages, format, language, publication date, bestseller/recommendation switches |
 | 23 | Order Fulfillment Management | `/admin/orders` | Complete | Orders list, status change dialog (Placed, Processing, Shipped, Delivered, Cancelled) |
 | 24 | User Management | `/admin/users` | Complete | User directory, roles display, interactive admin switch per user |
 
 Store configuration is available at `/admin/settings`: shipping fee, free-shipping threshold, tax percentage and optional public store URL are saved to Firestore.
+
+Additional administrator routes: `/admin/promotions` manages discounts and `/admin/policies` publishes project policies. Public routes `/policies/terms` and `/policies/privacy` show their stored content and version. Catalog and inventory lists load in cursor-based pages.

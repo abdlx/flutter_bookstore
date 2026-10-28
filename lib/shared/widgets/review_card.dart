@@ -1,4 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../providers/app_providers.dart';
+import '../../core/utils/store_action.dart';
+
+import 'profile_avatar.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../core/models/review.dart';
@@ -7,8 +13,16 @@ import '../../core/theme/bookstore_tokens.dart';
 class ReviewCard extends StatelessWidget {
   final ReviewItem review;
   final VoidCallback? onHelpful;
+  final bool isHelpful;
+  final bool voting;
 
-  const ReviewCard({super.key, required this.review, this.onHelpful});
+  const ReviewCard({
+    super.key,
+    required this.review,
+    this.onHelpful,
+    this.isHelpful = false,
+    this.voting = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,25 +38,7 @@ class ReviewCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: CachedNetworkImage(
-                  imageUrl: review.userAvatar,
-                  width: 36,
-                  height: 36,
-                  fit: BoxFit.cover,
-                  errorWidget: (_, _, _) => Container(
-                    width: 36,
-                    height: 36,
-                    color: BookstoreTokens.surfaceWarm,
-                    child: const Icon(
-                      Icons.person,
-                      size: 20,
-                      color: BookstoreTokens.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
+              ProfileAvatar(url: review.userAvatar, radius: 18),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -89,35 +85,69 @@ class ReviewCard extends StatelessWidget {
               color: BookstoreTokens.textPrimary,
             ),
           ),
-          if (review.helpfulCount > 0) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: onHelpful,
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.thumb_up_alt_outlined,
-                        size: 14,
-                        color: BookstoreTokens.textSecondary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Helpful (${review.helpfulCount})',
-                        style: BookstoreTokens.body(
-                          fontSize: 11.5,
-                          color: BookstoreTokens.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: voting ? null : onHelpful,
+              icon: voting
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      isHelpful
+                          ? Icons.thumb_up_alt
+                          : Icons.thumb_up_alt_outlined,
+                      size: 16,
+                    ),
+              label: Text('Helpful (${review.helpfulCount})'),
             ),
-          ],
+          ),
         ],
       ),
+    );
+  }
+}
+
+class HelpfulReviewCard extends ConsumerStatefulWidget {
+  final ReviewItem review;
+  const HelpfulReviewCard({super.key, required this.review});
+  @override
+  ConsumerState<HelpfulReviewCard> createState() => _HelpfulReviewCardState();
+}
+
+class _HelpfulReviewCardState extends ConsumerState<HelpfulReviewCard> {
+  bool _busy = false;
+  @override
+  Widget build(BuildContext context) {
+    final review = widget.review;
+    final vote = ref.watch(
+      helpfulVoteProvider((bookId: review.bookId, reviewId: review.id)),
+    );
+    final ownReview =
+        ref.watch(currentUserStreamProvider).value?.id == review.id;
+    return ReviewCard(
+      review: review,
+      isHelpful: vote.value ?? false,
+      voting: _busy,
+      onHelpful: ownReview || vote.isLoading
+          ? null
+          : () async {
+              setState(() => _busy = true);
+              try {
+                await storeAction(
+                  context,
+                  ref,
+                  () => ref
+                      .read(reviewRepositoryProvider)
+                      .toggleHelpfulVote(review.bookId, review.id),
+                );
+              } finally {
+                if (mounted) setState(() => _busy = false);
+              }
+            },
     );
   }
 }

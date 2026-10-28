@@ -1,3 +1,7 @@
+import '../../../data/firestore/firestore_media_repository.dart';
+import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/image_upload_button.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -245,11 +249,32 @@ class _AddEditBookScreenState extends ConsumerState<AddEditBookScreen> {
                         ],
                       ),
                       const SizedBox(height: 14),
-                      PremiumTextField(
-                        controller: _coverUrlController,
-                        label: 'Cover Image URL',
-                        hint: 'https://...',
+                      ImageUploadButton(
+                        purpose: 'cover',
+                        onUploaded: (url) =>
+                            setState(() => _coverUrlController.text = url),
                       ),
+                      const SizedBox(height: 12),
+                      if (_coverUrlController.text.startsWith(mediaPrefix)) ...[
+                        Center(
+                          child: BookCover(
+                            imageUrl: _coverUrlController.text,
+                            width: 100,
+                            height: 147,
+                            title: _titleController.text,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () =>
+                              setState(() => _coverUrlController.clear()),
+                          child: const Text('Use an image link instead'),
+                        ),
+                      ] else
+                        PremiumTextField(
+                          controller: _coverUrlController,
+                          label: 'Cover Image URL',
+                          hint: 'https://...',
+                        ),
                       const SizedBox(height: 14),
                       Row(
                         children: [

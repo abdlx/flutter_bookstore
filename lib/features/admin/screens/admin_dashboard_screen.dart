@@ -12,13 +12,11 @@ class AdminDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final adminRepo = ref.read(adminRepositoryProvider);
-
     return Scaffold(
       backgroundColor: BookstoreTokens.background,
       appBar: const PremiumAppBar(title: 'Admin Management'),
-      body: FutureBuilder<AdminDashboardStats>(
-        future: adminRepo.getDashboardStats(),
+      body: StreamBuilder<AdminDashboardStats>(
+        stream: ref.watch(adminStatsProvider),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
@@ -154,6 +152,20 @@ class AdminDashboardScreen extends ConsumerWidget {
                     'Set shipping fees, free-shipping policy and tax rate',
                 icon: Icons.tune_rounded,
                 onTap: () => context.push('/admin/settings'),
+              ),
+              const SizedBox(height: 12),
+              _AdminModuleCard(
+                title: 'Promotions',
+                description: 'Create, edit and retire discount codes',
+                icon: Icons.local_offer_outlined,
+                onTap: () => context.push('/admin/promotions'),
+              ),
+              const SizedBox(height: 12),
+              _AdminModuleCard(
+                title: 'Terms & Privacy',
+                description: 'Publish the policies shown during registration',
+                icon: Icons.policy_outlined,
+                onTap: () => context.push('/admin/policies'),
               ),
               const SizedBox(height: 30),
             ],

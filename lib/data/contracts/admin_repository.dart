@@ -19,6 +19,8 @@ class AdminDashboardStats {
 }
 
 abstract class AdminRepository {
+  Stream<AdminDashboardStats> watchDashboardStats();
+  Stream<List<UserProfile>> watchUsers();
   Future<AdminDashboardStats> getDashboardStats();
   Future<List<OrderItem>> getAllOrders();
   Future<void> updateOrderStatus(String orderId, OrderStatus status);

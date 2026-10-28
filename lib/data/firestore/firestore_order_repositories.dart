@@ -1,3 +1,7 @@
+import 'catalog_queries.dart';
+
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/models/address.dart';
@@ -253,6 +257,75 @@ class FirestoreReviewRepository implements ReviewRepository {
   FirebaseFirestore get db => store.db;
   FirestoreReviewRepository(this.store);
   @override
+  Stream<List<ReviewItem>> watchReviews(String bookId) => db
+      .collection('books')
+      .doc(bookId)
+      .collection('reviews')
+      .snapshots()
+      .map((snapshot) {
+        final docs = snapshot.docs.toList()
+          ..sort(
+            (a, b) =>
+                readDate(b.data()['createdAt'])
+                    .compareTo(readDate(a.data()['createdAt'])),
+          );
+        return docs
+            .map(
+              (d) => ReviewItem(
+                id: d.id,
+                bookId: bookId,
+                userName: d.data()['userName'] ?? '',
+                userAvatar: d.data()['userAvatar'] ?? '',
+                rating: (d.data()['rating'] as num).toDouble(),
+                dateString: readDate(d.data()['createdAt'])
+                    .toLocal()
+                    .toString()
+                    .split(' ')
+                    .first,
+                content: d.data()['content'] ?? '',
+                helpfulCount: (d.data()['helpfulCount'] as num? ?? 0).toInt(),
+              ),
+            )
+            .toList();
+      });
+
+  @override
+  Stream<bool> watchHelpfulVote(String bookId, String reviewId) => db
+      .collection('books')
+      .doc(bookId)
+      .collection('reviews')
+      .doc(reviewId)
+      .snapshots()
+      .map(
+        (d) => (d.data()?['helpfulBy'] as Map? ?? {}).containsKey(store.uid),
+      );
+  @override
+  Future<void> toggleHelpfulVote(String bookId, String reviewId) async {
+    final uid = store.user.id;
+    if (uid == reviewId) {
+      throw StateError('You cannot vote on your own review.');
+    }
+    final review = db
+        .collection('books')
+        .doc(bookId)
+        .collection('reviews')
+        .doc(reviewId);
+    await db.runTransaction((tx) async {
+      final doc = await tx.get(review);
+      if (!doc.exists) throw StateError('This review is no longer available.');
+      final voters = doc.data()?['helpfulBy'] as Map? ?? {};
+      final hadVote = voters.containsKey(uid);
+      if (!hadVote && voters.length >= 10000) {
+        throw StateError('This review has reached its voting limit.');
+      }
+      tx.update(review, {
+        FieldPath(['helpfulBy', uid]): hadVote ? FieldValue.delete() : true,
+        'helpfulCount': FieldValue.increment(hadVote ? -1 : 1),
+      });
+    });
+  }
+
+  @override
   Future<List<ReviewItem>> getReviewsForBook(String bookId) async {
     final snapshot = await db
         .collection('books')
@@ -333,9 +406,12 @@ class FirestoreReviewRepository implements ReviewRepository {
         'rating': rating.toInt(),
         'content': comment.trim(),
         'createdAt': FieldValue.serverTimestamp(),
-        'helpfulCount': 0,
-      });
+        if (!old.exists) 'helpfulCount': 0,
+        if (!old.exists) 'helpfulBy': <String, bool>{},
+      }, SetOptions(merge: true));
       tx.update(bookRef, {
+        'ratingScore': sum / count,
+        'reviewTotal': count,
         'rating': sum / count,
         'reviewCount': count,
         'ratingCounts': counts,
@@ -350,6 +426,61 @@ class FirestoreReviewRepository implements ReviewRepository {
 class FirestoreAdminRepository implements AdminRepository {
   final FirebaseFirestore db;
   FirestoreAdminRepository(this.db);
+  @override
+  Stream<List<UserProfile>> watchUsers() => db
+      .collection('users')
+      .snapshots()
+      .map((s) => s.docs.map((d) => readProfile(d.id, d.data())).toList());
+  @override
+  Stream<AdminDashboardStats> watchDashboardStats() {
+    late StreamController<AdminDashboardStats> controller;
+    final subscriptions = <StreamSubscription<dynamic>>[];
+    List<OrderItem>? orders;
+    int? books, users;
+    void emit() {
+      if (orders == null || books == null || users == null) return;
+      controller.add(
+        AdminDashboardStats(
+          totalRevenue: orders!
+              .where((o) => o.status == OrderStatus.delivered)
+              .fold(0.0, (s, o) => s + o.total),
+          totalOrders: orders!.length,
+          totalBooks: books!,
+          totalUsers: users!,
+        ),
+      );
+    }
+
+    controller = StreamController<AdminDashboardStats>(
+      onListen: () {
+        subscriptions.add(
+          db.collection('orders').snapshots().listen((s) {
+            orders = s.docs.map((d) => readOrder(d.id, d.data())).toList();
+            emit();
+          }, onError: controller.addError),
+        );
+        subscriptions.add(
+          db.collection('books').snapshots().listen((s) {
+            books = s.size;
+            emit();
+          }, onError: controller.addError),
+        );
+        subscriptions.add(
+          db.collection('users').snapshots().listen((s) {
+            users = s.size;
+            emit();
+          }, onError: controller.addError),
+        );
+      },
+      onCancel: () async {
+        for (final subscription in subscriptions) {
+          await subscription.cancel();
+        }
+      },
+    );
+    return controller.stream;
+  }
+
   @override
   Future<AdminDashboardStats> getDashboardStats() async {
     final orders = await getAllOrders();
@@ -391,18 +522,7 @@ class FirestoreAdminRepository implements AdminRepository {
   Future<List<BookItem>> getAllBooks() =>
       FirestoreBookRepository(db).getBooks();
   @override
-  Future<void> saveBook(BookItem book) async {
-    // Aggregate updates must accompany an authenticated review transaction.
-    final data = book.toMap()
-      ..remove('rating')
-      ..remove('reviewCount')
-      ..remove('ratingBreakdown');
-    await db
-        .collection('books')
-        .doc(book.id)
-        .set(data, SetOptions(merge: true));
-  }
-
+  Future<void> saveBook(BookItem book) => saveCatalogBook(db, book);
   @override
-  Future<void> deleteBook(String id) => db.collection('books').doc(id).delete();
+  Future<void> deleteBook(String id) => deleteCatalogBook(db, id);
 }

@@ -1,3 +1,5 @@
+import '../../../data/firestore/firestore_media_repository.dart';
+import '../../../shared/widgets/image_upload_button.dart';
 import '../../../shared/widgets/profile_avatar.dart';
 
 import 'package:flutter/material.dart';
@@ -91,10 +93,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Center(
-                  child: ProfileAvatar(
-                    url: ref.watch(currentUserStreamProvider).value?.avatarUrl,
-                    radius: 45,
-                  ),
+                  child: ProfileAvatar(url: _avatarController.text, radius: 45),
+                ),
+                const SizedBox(height: 12),
+                ImageUploadButton(
+                  purpose: 'avatar',
+                  onUploaded: (url) =>
+                      setState(() => _avatarController.text = url),
                 ),
                 const SizedBox(height: 32),
                 PremiumTextField(
@@ -119,12 +124,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 18),
-                PremiumTextField(
-                  controller: _avatarController,
-                  label: 'Profile Image URL',
-                  hint: 'https://...',
-                  keyboardType: TextInputType.url,
-                ),
+                if (_avatarController.text.startsWith(mediaPrefix))
+                  TextButton(
+                    onPressed: () => setState(() => _avatarController.clear()),
+                    child: const Text('Use an image link instead'),
+                  )
+                else
+                  PremiumTextField(
+                    controller: _avatarController,
+                    label: 'Profile Image URL',
+                    onChanged: (_) => setState(() {}),
+                    hint: 'https://...',
+                    keyboardType: TextInputType.url,
+                  ),
                 const SizedBox(height: 32),
                 PremiumButton(
                   label: 'Save Changes',

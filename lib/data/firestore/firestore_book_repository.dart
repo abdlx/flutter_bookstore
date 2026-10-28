@@ -1,3 +1,5 @@
+import 'catalog_queries.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/models/book.dart';
@@ -80,23 +82,9 @@ class FirestoreBookRepository implements BookRepository {
     sortBy: sortBy,
   );
   @override
-  Future<void> addBook(BookItem book) => collection
-      .doc(book.id)
-      .set(
-        book.toMap()
-          ..remove('rating')
-          ..remove('reviewCount')
-          ..remove('ratingBreakdown'),
-      );
+  Future<void> addBook(BookItem book) => saveCatalogBook(db, book);
   @override
-  Future<void> updateBook(BookItem book) => collection
-      .doc(book.id)
-      .update(
-        book.toMap()
-          ..remove('rating')
-          ..remove('reviewCount')
-          ..remove('ratingBreakdown'),
-      );
+  Future<void> updateBook(BookItem book) => saveCatalogBook(db, book);
   @override
-  Future<void> deleteBook(String id) => collection.doc(id).delete();
+  Future<void> deleteBook(String id) => deleteCatalogBook(db, id);
 }

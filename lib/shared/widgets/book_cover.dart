@@ -1,4 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'store_image.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/bookstore_tokens.dart';
@@ -70,16 +71,12 @@ class BookCover extends StatelessWidget {
   }
 
   Widget _buildCoverContent() {
-    if (imageUrl.isNotEmpty && imageUrl.startsWith('http')) {
-      return CachedNetworkImage(
-        imageUrl: imageUrl,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => _buildPlaceholder(),
-        errorWidget: (context, url, error) => _buildGenericCover(),
-      );
-    }
-
-    return _buildGenericCover();
+    return StoreImage(
+      url: imageUrl,
+      fit: BoxFit.cover,
+      fallback: _buildGenericCover(),
+      loading: _buildPlaceholder(),
+    );
   }
 
   Widget _buildSpineOverlay() {

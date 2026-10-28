@@ -1,3 +1,4 @@
+import '../../../shared/widgets/profile_avatar.dart';
 import '../../../core/utils/store_action.dart';
 
 import 'package:flutter/material.dart';
@@ -24,8 +25,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     return Scaffold(
       backgroundColor: BookstoreTokens.background,
       appBar: const PremiumAppBar(title: 'User Management'),
-      body: FutureBuilder<List<UserProfile>>(
-        future: adminRepo.getAllUsers(),
+      body: StreamBuilder<List<UserProfile>>(
+        stream: ref.watch(adminUsersProvider),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -58,19 +59,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: BookstoreTokens.surfaceWarm,
-                      backgroundImage: user.avatarUrl != null
-                          ? NetworkImage(user.avatarUrl!)
-                          : null,
-                      child: user.avatarUrl == null
-                          ? const Icon(
-                              Icons.person,
-                              color: BookstoreTokens.textSecondary,
-                            )
-                          : null,
-                    ),
+                    ProfileAvatar(url: user.avatarUrl, radius: 22),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(

@@ -10,12 +10,14 @@ class BookListTile extends StatelessWidget {
   final BookItem book;
   final VoidCallback? onTap;
   final Widget? trailing;
+  final bool showStock;
 
   const BookListTile({
     super.key,
     required this.book,
     this.onTap,
     this.trailing,
+    this.showStock = false,
   });
 
   @override
@@ -111,6 +113,11 @@ class BookListTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  if (showStock)
+                    Text(
+                      '${book.stockQuantity} in stock${book.isBestseller ? ' · Bestseller' : ''}',
+                      style: BookstoreTokens.body(fontSize: 12),
+                    ),
                   PriceLabel(
                     price: book.price,
                     originalPrice: book.originalPrice,

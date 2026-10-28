@@ -22,7 +22,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _agreeToTerms = true;
+  bool _agreeToTerms = false;
   bool _isLoading = false;
 
   @override
@@ -193,6 +193,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                     const SizedBox(height: 24),
 
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: () => context.push('/policies/terms'),
+                          child: const Text('Read Terms'),
+                        ),
+                        TextButton(
+                          onPressed: () => context.push('/policies/privacy'),
+                          child: const Text('Read Privacy Policy'),
+                        ),
+                      ],
+                    ),
                     // Register Button
                     PremiumButton(
                       label: 'Create Account',

@@ -11,6 +11,16 @@ enum OrderStatus {
   cancelled,
 }
 
+extension OrderTransitions on OrderStatus {
+  List<OrderStatus> get nextStatuses => switch (this) {
+    OrderStatus.placed => [OrderStatus.confirmed, OrderStatus.cancelled],
+    OrderStatus.confirmed => [OrderStatus.processing, OrderStatus.cancelled],
+    OrderStatus.processing => [OrderStatus.shipped, OrderStatus.cancelled],
+    OrderStatus.shipped => [OrderStatus.delivered],
+    OrderStatus.delivered || OrderStatus.cancelled => [],
+  };
+}
+
 class TrackingStep {
   final String title;
   final String description;

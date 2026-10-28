@@ -1,3 +1,4 @@
+import '../../../shared/widgets/owned_text_controllers.dart';
 import '../../../core/utils/store_action.dart';
 
 import 'package:flutter/material.dart';
@@ -30,96 +31,98 @@ class _ReviewsScreenState extends ConsumerState<ReviewsScreen> {
     PremiumBottomSheet.show(
       context: context,
       title: 'Write a Review',
-      child: StatefulBuilder(
-        builder: (ctx, setSheetState) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Reviewing: $bookTitle',
-                style: BookstoreTokens.body(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.bold,
-                  color: BookstoreTokens.primaryDark,
+      child: OwnedTextControllers(
+        controllers: [commentController],
+        child: StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Reviewing: $bookTitle',
+                  style: BookstoreTokens.body(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.bold,
+                    color: BookstoreTokens.primaryDark,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Select Rating',
-                style: BookstoreTokens.body(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 16),
+                Text(
+                  'Select Rating',
+                  style: BookstoreTokens.body(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  final starVal = index + 1.0;
-                  return IconButton(
-                    icon: Icon(
-                      starVal <= selectedRating
-                          ? Icons.star_rounded
-                          : Icons.star_border_rounded,
-                      color: BookstoreTokens.rating,
-                      size: 34,
-                    ),
-                    onPressed: () {
-                      setSheetState(() => selectedRating = starVal);
-                    },
-                  );
-                }),
-              ),
-              const SizedBox(height: 16),
-              PremiumTextField(
-                controller: commentController,
-                label: 'Your Review',
-                hint: 'Share what you thought about the prose, themes, and characters...',
-                maxLines: 4,
-              ),
-              const SizedBox(height: 24),
-              PremiumButton(
-                label: 'Submit Review',
-                onPressed: () async {
-                  if (commentController.text.trim().isEmpty) return;
-                  final user = ref.read(authRepositoryProvider).currentUser;
-                  if (!await storeAction(
-                    context,
-                    ref,
-                    () => ref
-                        .read(reviewRepositoryProvider)
-                        .addReview(
-                          bookId: widget.bookId,
-                          userName: user?.fullName ?? '',
-                          rating: selectedRating,
-                          comment: commentController.text.trim(),
-                        ),
-                  )) {
-                    return;
-                  }
-                  if (ctx.mounted) {
-                    Navigator.pop(ctx);
-                    setState(() {});
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Review published successfully!'),
-                        backgroundColor: BookstoreTokens.success,
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    final starVal = index + 1.0;
+                    return IconButton(
+                      icon: Icon(
+                        starVal <= selectedRating
+                            ? Icons.star_rounded
+                            : Icons.star_border_rounded,
+                        color: BookstoreTokens.rating,
+                        size: 34,
                       ),
+                      onPressed: () {
+                        setSheetState(() => selectedRating = starVal);
+                      },
                     );
-                  }
-                },
-              ),
-            ],
-          );
-        },
+                  }),
+                ),
+                const SizedBox(height: 16),
+                PremiumTextField(
+                  controller: commentController,
+                  label: 'Your Review',
+                  hint: 'Share what you thought about the prose, themes, and characters...',
+                  maxLines: 4,
+                ),
+                const SizedBox(height: 24),
+                PremiumButton(
+                  label: 'Submit Review',
+                  onPressed: () async {
+                    if (commentController.text.trim().isEmpty) return;
+                    final user = ref.read(authRepositoryProvider).currentUser;
+                    if (!await storeAction(
+                      context,
+                      ref,
+                      () => ref
+                          .read(reviewRepositoryProvider)
+                          .addReview(
+                            bookId: widget.bookId,
+                            userName: user?.fullName ?? '',
+                            rating: selectedRating,
+                            comment: commentController.text.trim(),
+                          ),
+                    )) {
+                      return;
+                    }
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Review published successfully!'),
+                          backgroundColor: BookstoreTokens.success,
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final booksAsync = ref.watch(allBooksStreamProvider);
-    final reviewRepo = ref.read(reviewRepositoryProvider);
+    final booksAsync = ref.watch(bookDetailsProvider(widget.bookId));
 
     return Scaffold(
       backgroundColor: BookstoreTokens.background,
@@ -129,8 +132,7 @@ class _ReviewsScreenState extends ConsumerState<ReviewsScreen> {
           child: CircularProgressIndicator(color: BookstoreTokens.primary),
         ),
         error: (e, _) => Center(child: Text('Error: $e')),
-        data: (books) {
-          final book = books.where((b) => b.id == widget.bookId).firstOrNull;
+        data: (book) {
           if (book == null) {
             return Scaffold(
               appBar: AppBar(title: const Text('Book unavailable')),
@@ -140,8 +142,8 @@ class _ReviewsScreenState extends ConsumerState<ReviewsScreen> {
             );
           }
 
-          return FutureBuilder<List<ReviewItem>>(
-            future: reviewRepo.getReviewsForBook(book.id),
+          return StreamBuilder<List<ReviewItem>>(
+            stream: ref.watch(reviewsProvider(book.id)),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
                 return Center(
@@ -255,7 +257,7 @@ class _ReviewsScreenState extends ConsumerState<ReviewsScreen> {
                     ...reviews.map((rev) {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: ReviewCard(review: rev),
+                        child: HelpfulReviewCard(review: rev),
                       );
                     }),
                 ],

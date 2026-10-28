@@ -34,5 +34,9 @@ class RoutePaths {
   static const String adminAddEditBook = '/admin/books/edit';
   static const String adminOrders = '/admin/orders';
   static const String adminUsers = '/admin/users';
+  static const String adminPromotions = '/admin/promotions';
+  static const String adminPolicies = '/admin/policies';
+  static const String terms = '/policies/terms';
+  static const String privacy = '/policies/privacy';
   static const String adminSettings = '/admin/settings';
 }
