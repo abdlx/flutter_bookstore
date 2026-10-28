@@ -77,7 +77,10 @@ class BookListTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Row(
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       BookRating(
                         rating: book.rating,
@@ -85,7 +88,6 @@ class BookListTile extends StatelessWidget {
                         fontSize: 11,
                         starSize: 13,
                       ),
-                      const SizedBox(width: 12),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -97,6 +99,8 @@ class BookListTile extends StatelessWidget {
                         ),
                         child: Text(
                           book.genre,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: BookstoreTokens.body(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,

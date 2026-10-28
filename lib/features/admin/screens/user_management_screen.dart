@@ -1,3 +1,5 @@
+import '../../../core/utils/store_action.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,6 +33,11 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
             );
           }
 
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Unable to load users: ${snapshot.error}'),
+            );
+          }
           final users = snapshot.data ?? [];
 
           return ListView.separated(
@@ -127,23 +134,35 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                     Switch(
                       value: user.isAdmin,
                       activeThumbColor: BookstoreTokens.primary,
-                      onChanged: (newIsAdmin) async {
-                        await adminRepo.updateUserRole(
-                          user.id,
-                          newIsAdmin ? UserRole.admin : UserRole.customer,
-                        );
-                        setState(() {});
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Updated ${user.fullName} to ${newIsAdmin ? "Admin" : "Customer"}',
-                              ),
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        }
-                      },
+                      onChanged:
+                          user.id ==
+                              ref.watch(currentUserStreamProvider).value?.id
+                          ? null
+                          : (newIsAdmin) async {
+                              if (!await storeAction(
+                                context,
+                                ref,
+                                () => adminRepo.updateUserRole(
+                                  user.id,
+                                  newIsAdmin
+                                      ? UserRole.admin
+                                      : UserRole.customer,
+                                ),
+                              )) {
+                                return;
+                              }
+                              setState(() {});
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Updated ${user.fullName} to ${newIsAdmin ? "Admin" : "Customer"}',
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            },
                     ),
                   ],
                 ),

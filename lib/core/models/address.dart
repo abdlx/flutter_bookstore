@@ -19,7 +19,7 @@ class AddressItem {
     required this.city,
     required this.state,
     required this.postalCode,
-    this.country = 'United States',
+    this.country = '',
     this.isDefault = false,
   });
 

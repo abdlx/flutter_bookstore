@@ -23,7 +23,7 @@ class GenreChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFFBA7822)
+              ? BookstoreTokens.primary
               : const Color(0xFFF7F3EC).withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(BookstoreTokens.radiusPill),
           border: isSelected
@@ -35,7 +35,7 @@ class GenreChip extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFFBA7822).withValues(alpha: 0.22),
+                    color: BookstoreTokens.primary.withValues(alpha: 0.22),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),

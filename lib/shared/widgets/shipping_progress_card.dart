@@ -9,23 +9,23 @@ class ShippingProgressCard extends StatelessWidget {
   const ShippingProgressCard({
     super.key,
     required this.currentSubtotal,
-    this.threshold = 50.0,
+    required this.threshold,
   });
 
   @override
   Widget build(BuildContext context) {
-    final double displayRemaining = (currentSubtotal == 47.0)
-        ? 7.0
+    final double displayRemaining = threshold <= 0
+        ? 0
         : (threshold - currentSubtotal).clamp(0.0, threshold);
-    final double displayProgress = (currentSubtotal == 47.0)
-        ? 0.82
+    final double displayProgress = threshold <= 0
+        ? 1
         : (currentSubtotal / threshold).clamp(0.0, 1.0);
     final isQualified = currentSubtotal >= threshold;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F2E8),
+        color: BookstoreTokens.surfaceWarm,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -43,7 +43,7 @@ class ShippingProgressCard extends StatelessWidget {
                 child: const Center(
                   child: Icon(
                     Icons.local_shipping_outlined,
-                    color: Color(0xFFBA7822),
+                    color: BookstoreTokens.primary,
                     size: 20,
                   ),
                 ),
@@ -68,10 +68,10 @@ class ShippingProgressCard extends StatelessWidget {
                           children: [
                             const TextSpan(text: "You're "),
                             TextSpan(
-                              text: '\$${displayRemaining.toStringAsFixed(0)}',
+                              text: '\$${displayRemaining.toStringAsFixed(2)}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFFBA7822),
+                                color: BookstoreTokens.primary,
                               ),
                             ),
                             const TextSpan(text: ' away from free shipping!'),
@@ -91,7 +91,7 @@ class ShippingProgressCard extends StatelessWidget {
                 value: displayProgress,
                 backgroundColor: const Color(0xFFE8E0D2),
                 valueColor: const AlwaysStoppedAnimation(
-                  Color(0xFFBA7822),
+                  BookstoreTokens.primary,
                 ),
               ),
             ),

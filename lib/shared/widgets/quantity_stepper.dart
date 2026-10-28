@@ -26,7 +26,7 @@ class QuantityStepper extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        color: backgroundColor ?? const Color(0xFFF7F2E8),
+        color: backgroundColor ?? BookstoreTokens.surfaceWarm,
         borderRadius: BorderRadius.circular(BookstoreTokens.radiusPill),
       ),
       child: Row(

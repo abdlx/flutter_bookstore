@@ -1,3 +1,7 @@
+import 'package:flutter/services.dart';
+
+import '../../../core/utils/store_action.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -38,10 +42,15 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       ),
       error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
       data: (books) {
-        final book = books.firstWhere(
-          (b) => b.id == widget.bookId,
-          orElse: () => books.first,
-        );
+        final book = books.where((b) => b.id == widget.bookId).firstOrNull;
+        if (book == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Book unavailable')),
+            body: const Center(
+              child: Text('This book is no longer available.'),
+            ),
+          );
+        }
 
         final isInWishlist =
             wishlistAsync.value?.any((b) => b.id == book.id) ?? false;
@@ -57,8 +66,12 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Top Canvas with warm beige gradient and floating cover
-                    _buildTopCanvas(context, book, isInWishlist, () {
-                      wishlistRepo.toggleWishlist(book);
+                    _buildTopCanvas(context, book, isInWishlist, () async {
+                      await storeAction(
+                        context,
+                        ref,
+                        () => wishlistRepo.toggleWishlist(book),
+                      );
                     }),
 
                     // Book Details Section
@@ -79,7 +92,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                                     Text(
                                       book.title,
                                       style: const TextStyle(
-                                        fontFamily: 'serif',
+                                        fontFamily: 'Cormorant Garamond',
                                         fontSize: 26,
                                         fontWeight: FontWeight.bold,
                                         color: Color(0xFF191C24),
@@ -107,12 +120,12 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                                     style: const TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFFBA7822),
+                                      color: BookstoreTokens.primary,
                                     ),
                                   ),
                                   if (book.originalPrice != null)
                                     Text(
-                                      '\$${book.originalPrice!.toStringAsFixed(0)}',
+                                      '\$${book.originalPrice!.toStringAsFixed(2)}',
                                       style: BookstoreTokens.body(
                                         fontSize: 14,
                                         color: const Color(0xFF9E9E9E),
@@ -170,7 +183,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                                       Icon(
                                         Icons.star_rounded,
                                         size: 13,
-                                        color: Color(0xFFBA7822),
+                                        color: BookstoreTokens.primary,
                                       ),
                                       SizedBox(width: 3),
                                       Text(
@@ -178,7 +191,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                                         style: TextStyle(
                                           fontSize: 11.5,
                                           fontWeight: FontWeight.w600,
-                                          color: Color(0xFFBA7822),
+                                          color: BookstoreTokens.primary,
                                         ),
                                       ),
                                     ],
@@ -205,7 +218,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                                           vertical: 7,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF7F2E8),
+                                          color: BookstoreTokens.surfaceWarm,
                                           borderRadius: BorderRadius.circular(
                                             BookstoreTokens.radiusPill,
                                           ),
@@ -215,7 +228,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                                           style: const TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,
-                                            color: Color(0xFFBA7822),
+                                            color: BookstoreTokens.primary,
                                           ),
                                         ),
                                       );
@@ -387,11 +400,39 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                       ),
                       const SizedBox(width: 12),
                       _CircleActionBtn(
-                        icon: Icons.ios_share_rounded,
-                        onTap: () {
+                        icon: Icons.link_rounded,
+                        onTap: () async {
+                          final configured =
+                              ref
+                                      .read(storeSettingsProvider)
+                                      .value?['storefrontUrl']
+                                  as String?;
+                          final base = Uri.tryParse(
+                            configured ?? Uri.base.toString(),
+                          );
+                          final link =
+                              base != null &&
+                                  ['http', 'https'].contains(base.scheme)
+                              ? base
+                                    .replace(
+                                      fragment:
+                                          '/book/${Uri.encodeComponent(book.id)}',
+                                    )
+                                    .toString()
+                              : null;
+                          await Clipboard.setData(
+                            ClipboardData(
+                              text: link ?? '${book.title} by ${book.author}',
+                            ),
+                          );
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Sharing book link...'),
+                            SnackBar(
+                              content: Text(
+                                link == null
+                                    ? 'Book details copied'
+                                    : 'Book link copied',
+                              ),
                             ),
                           );
                         },
@@ -425,38 +466,9 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
             const SizedBox(height: 16),
 
-            // Pagination dots (exactly 3 dots in reference image)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 14,
-                  height: 4.5,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFBA7822),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-                const SizedBox(width: 5),
-                _smallDot(),
-                const SizedBox(width: 5),
-                _smallDot(),
-              ],
-            ),
             const SizedBox(height: 8),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _smallDot() {
-    return Container(
-      width: 4.5,
-      height: 4.5,
-      decoration: const BoxDecoration(
-        color: Color(0xFFD4CEC3),
-        shape: BoxShape.circle,
       ),
     );
   }
@@ -465,7 +477,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F2E8),
+        color: BookstoreTokens.surfaceWarm,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -509,7 +521,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             Text(
               book.rating.toStringAsFixed(1),
               style: const TextStyle(
-                fontFamily: 'serif',
+                fontFamily: 'Cormorant Garamond',
                 fontSize: 38,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF191C24),
@@ -519,8 +531,10 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             const SizedBox(height: 4),
             Row(
               children: List.generate(5, (index) {
-                return const Icon(
-                  Icons.star_rounded,
+                return Icon(
+                  index < book.rating.round()
+                      ? Icons.star_rounded
+                      : Icons.star_border_rounded,
                   size: 16,
                   color: Color(0xFFF5A623),
                 );
@@ -541,11 +555,11 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         Expanded(
           child: Column(
             children: [
-              _RatingBarRow(stars: 5, pct: book.ratingBreakdown[5] ?? 0.82),
-              _RatingBarRow(stars: 4, pct: book.ratingBreakdown[4] ?? 0.12),
-              _RatingBarRow(stars: 3, pct: book.ratingBreakdown[3] ?? 0.04),
-              _RatingBarRow(stars: 2, pct: book.ratingBreakdown[2] ?? 0.01),
-              _RatingBarRow(stars: 1, pct: book.ratingBreakdown[1] ?? 0.01),
+              _RatingBarRow(stars: 5, pct: book.ratingBreakdown[5] ?? 0),
+              _RatingBarRow(stars: 4, pct: book.ratingBreakdown[4] ?? 0),
+              _RatingBarRow(stars: 3, pct: book.ratingBreakdown[3] ?? 0),
+              _RatingBarRow(stars: 2, pct: book.ratingBreakdown[2] ?? 0),
+              _RatingBarRow(stars: 1, pct: book.ratingBreakdown[1] ?? 0),
             ],
           ),
         ),
@@ -581,7 +595,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           QuantityStepper(
             quantity: _quantity,
             height: 48,
-            backgroundColor: const Color(0xFFF7F2E8),
+            backgroundColor: BookstoreTokens.surfaceWarm,
             onChanged: (newQty) {
               setState(() {
                 _quantity = newQty;
@@ -592,7 +606,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           // Prominent Gold Add to Cart button
           Expanded(
             child: PremiumButton(
-              label: 'Add to Cart',
+              label: book.stockQuantity <= 0 ? 'Out of stock' : 'Add to Cart',
               leadingIcon: const Icon(
                 Icons.shopping_cart_outlined,
                 color: Colors.white,
@@ -600,20 +614,31 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
               ),
               height: 52,
               borderRadius: 26,
-              onPressed: () {
-                cartRepo.addToCart(book, quantity: _quantity);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Added $_quantity "${book.title}" to cart'),
-                    backgroundColor: BookstoreTokens.textPrimary,
-                    action: SnackBarAction(
-                      label: 'View Cart',
-                      textColor: BookstoreTokens.primaryLight,
-                      onPressed: () => context.go('/cart'),
-                    ),
-                  ),
-                );
-              },
+              onPressed: book.stockQuantity <= 0
+                  ? null
+                  : () async {
+                      if (!await storeAction(
+                        context,
+                        ref,
+                        () => cartRepo.addToCart(book, quantity: _quantity),
+                      )) {
+                        return;
+                      }
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Added $_quantity "${book.title}" to cart',
+                          ),
+                          backgroundColor: BookstoreTokens.textPrimary,
+                          action: SnackBarAction(
+                            label: 'View Cart',
+                            textColor: BookstoreTokens.primaryLight,
+                            onPressed: () => context.go('/cart'),
+                          ),
+                        ),
+                      );
+                    },
             ),
           ),
         ],
@@ -741,7 +766,7 @@ class _RatingBarRow extends StatelessWidget {
                   value: pct,
                   backgroundColor: const Color(0xFFE8E2D8),
                   valueColor: const AlwaysStoppedAnimation(
-                    Color(0xFFBA7822),
+                    BookstoreTokens.primary,
                   ),
                 ),
               ),

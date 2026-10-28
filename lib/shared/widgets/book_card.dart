@@ -91,11 +91,11 @@ class BookCard extends StatelessWidget {
                         width: 30,
                         height: 30,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFBA7822),
+                          color: BookstoreTokens.primary,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFBA7822).withValues(
+                              color: BookstoreTokens.primary.withValues(
                                 alpha: 0.35,
                               ),
                               blurRadius: 8,

@@ -1,3 +1,5 @@
+import '../../../core/utils/store_action.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -30,8 +32,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
             return EmptyState(
               icon: Icons.credit_card_off_outlined,
               title: 'No Payment Methods',
-              subtitle:
-                  'Add a card or billing method for faster, seamless checkout.',
+              subtitle: 'Save cash on delivery for a faster checkout.',
               buttonLabel: '+ Add Payment Method',
               onButtonPressed: () => context.push('/profile/payments/edit'),
             );
@@ -52,9 +53,16 @@ class PaymentMethodsScreen extends ConsumerWidget {
                     final pm = methods[index];
                     return _PaymentMethodCard(
                       payment: pm,
-                      onSetDefault: () =>
-                          paymentRepo.setDefaultPaymentMethod(pm.id),
-                      onDelete: () => paymentRepo.deletePaymentMethod(pm.id),
+                      onSetDefault: () => storeAction(
+                        context,
+                        ref,
+                        () => paymentRepo.setDefaultPaymentMethod(pm.id),
+                      ),
+                      onDelete: () => storeAction(
+                        context,
+                        ref,
+                        () => paymentRepo.deletePaymentMethod(pm.id),
+                      ),
                     );
                   },
                 ),

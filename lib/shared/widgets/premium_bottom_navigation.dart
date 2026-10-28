@@ -97,7 +97,7 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = isSelected
-        ? const Color(0xFFBA7822)
+        ? BookstoreTokens.primary
         : const Color(0xFF8E8E93);
 
     return GestureDetector(

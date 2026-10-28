@@ -1,3 +1,6 @@
+import '../../../core/utils/store_action.dart';
+import '../../../shared/widgets/profile_avatar.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,14 +21,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final List<String> _categories = [
-    'All',
-    'Fiction',
-    'Non-Fiction',
-    'Education',
-    'Self Help',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final booksAsync = ref.watch(allBooksStreamProvider);
@@ -33,7 +28,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final selectedGenre = ref.watch(selectedGenreProvider);
 
     final user = userAsync.value;
-    final userName = user?.fullName.split(' ').first ?? 'Alex';
+    final userName = user?.fullName.split(' ').first ?? 'Reader';
 
     return Scaffold(
       backgroundColor: BookstoreTokens.background,
@@ -70,7 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           Text(
                             '$userName 👋',
                             style: const TextStyle(
-                              fontFamily: 'serif',
+                              fontFamily: 'Cormorant Garamond',
                               fontSize: 26,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF191C24),
@@ -81,66 +76,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       Row(
                         children: [
-                          // Notification Bell with unread dot
-                          _HeaderCircleButton(
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                const Icon(
-                                  Icons.notifications_none_rounded,
-                                  color: Color(0xFF191C24),
-                                  size: 22,
-                                ),
-                                Positioned(
-                                  top: 1,
-                                  right: 2,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE54D42),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('No new notifications today'),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 12),
-                          // User Avatar
                           GestureDetector(
                             onTap: () => context.go('/profile'),
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.06),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                                image: DecorationImage(
-                                  image: NetworkImage(
-                                    user?.avatarUrl ?? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-                                  ),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                            child: ProfileAvatar(
+                              url: user?.avatarUrl,
+                              radius: 22,
                             ),
                           ),
                         ],
@@ -170,7 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // Horizontal Category Chips
               SliverToBoxAdapter(
                 child: CategorySelector(
-                  categories: _categories,
+                  categories: ref.watch(catalogGenresProvider),
                   selectedCategory: selectedGenre,
                   onSelected: (genre) {
                     ref.read(selectedGenreProvider.notifier).state = genre;
@@ -226,9 +166,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       return b.isRecommended;
                     }).toList();
 
-                    final displayBooks = recommended.isNotEmpty
-                        ? recommended
-                        : books.take(5).toList();
+                    final displayBooks = recommended;
+                    if (displayBooks.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text(
+                          'No recommendations yet. Explore the catalog for available books.',
+                        ),
+                      );
+                    }
 
                     return SizedBox(
                       height: 335,
@@ -243,8 +189,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           return BookCard(
                             book: book,
                             onTap: () => context.push('/book/${book.id}'),
-                            onAddToCart: () {
-                              ref.read(cartRepositoryProvider).addToCart(book);
+                            onAddToCart: () async {
+                              if (!await storeAction(
+                                context,
+                                ref,
+                                () => ref
+                                    .read(cartRepositoryProvider)
+                                    .addToCart(book),
+                              )) {
+                                return;
+                              }
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
@@ -285,6 +240,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     final bestsellers = books
                         .where((b) => b.isBestseller)
                         .toList();
+                    if (bestsellers.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text(
+                          'Bestsellers will appear here when available.',
+                        ),
+                      );
+                    }
                     return SizedBox(
                       height: 335,
                       child: ListView.separated(
@@ -298,8 +261,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           return BookCard(
                             book: book,
                             onTap: () => context.push('/book/${book.id}'),
-                            onAddToCart: () {
-                              ref.read(cartRepositoryProvider).addToCart(book);
+                            onAddToCart: () async {
+                              if (!await storeAction(
+                                context,
+                                ref,
+                                () => ref
+                                    .read(cartRepositoryProvider)
+                                    .addToCart(book),
+                              )) {
+                                return;
+                              }
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
@@ -322,36 +294,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _HeaderCircleButton extends StatelessWidget {
-  final Widget child;
-  final VoidCallback onTap;
-
-  const _HeaderCircleButton({required this.child, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Center(child: child),
       ),
     );
   }

@@ -10,7 +10,7 @@ class BookItem {
   final double? originalPrice;
   final double rating;
   final int reviewCount;
-  final Map<int, double> ratingBreakdown; // 5: 0.82, 4: 0.12, etc.
+  final Map<int, double> ratingBreakdown; // Star value to review fraction.
   final bool isBestseller;
   final bool isRecommended;
   final String format; // 'Paperback'
@@ -32,14 +32,14 @@ class BookItem {
     this.originalPrice,
     this.rating = 0.0,
     this.reviewCount = 0,
-    this.ratingBreakdown = const {5: 0.82, 4: 0.12, 3: 0.04, 2: 0.01, 1: 0.01},
+    this.ratingBreakdown = const {},
     this.isBestseller = false,
     this.isRecommended = false,
-    this.format = 'Paperback',
-    this.pages = 320,
-    this.language = 'English',
-    this.publisher = 'Penguin Random House',
-    this.stockQuantity = 25,
+    this.format = '',
+    this.pages = 0,
+    this.language = '',
+    this.publisher = '',
+    this.stockQuantity = 0,
     required this.publishedDate,
   });
 
@@ -101,6 +101,9 @@ class BookItem {
     'originalPrice': originalPrice,
     'rating': rating,
     'reviewCount': reviewCount,
+    'ratingBreakdown': ratingBreakdown.map(
+      (key, value) => MapEntry(key.toString(), value),
+    ),
     'isBestseller': isBestseller,
     'isRecommended': isRecommended,
     'format': format,
@@ -123,15 +126,20 @@ class BookItem {
     originalPrice: (map['originalPrice'] as num?)?.toDouble(),
     rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
     reviewCount: (map['reviewCount'] as num?)?.toInt() ?? 0,
+    ratingBreakdown: (map['ratingBreakdown'] as Map? ?? {}).map(
+      (key, value) =>
+          MapEntry(int.parse(key.toString()), (value as num).toDouble()),
+    ),
     isBestseller: map['isBestseller'] ?? false,
     isRecommended: map['isRecommended'] ?? false,
-    format: map['format'] ?? 'Paperback',
-    pages: (map['pages'] as num?)?.toInt() ?? 320,
-    language: map['language'] ?? 'English',
+    format: map['format'] ?? '',
+    pages: (map['pages'] as num?)?.toInt() ?? 0,
+    language: map['language'] ?? '',
     publisher: map['publisher'] ?? '',
     stockQuantity: (map['stockQuantity'] as num?)?.toInt() ?? 0,
     publishedDate: map['publishedDate'] != null
-        ? DateTime.tryParse(map['publishedDate']) ?? DateTime.now()
-        : DateTime.now(),
+        ? DateTime.tryParse(map['publishedDate'].toString()) ??
+              DateTime.fromMillisecondsSinceEpoch(0)
+        : DateTime.fromMillisecondsSinceEpoch(0),
   );
 }

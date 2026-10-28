@@ -35,7 +35,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     _timer = Timer(const Duration(milliseconds: 1600), () {
       if (mounted) {
-        final currentUser = ref.read(authRepositoryProvider).currentUser;
+        final currentUser = ref.read(firebaseAuthProvider).currentUser;
         if (currentUser != null) {
           context.go('/home');
         } else {

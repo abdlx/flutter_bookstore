@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/models/order.dart';
 import '../../../core/theme/bookstore_tokens.dart';
 import '../../../providers/app_providers.dart';
 import '../../../shared/widgets/order_summary.dart';
@@ -15,25 +14,18 @@ class OrderDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderRepo = ref.read(orderRepositoryProvider);
+    final orderAsync = ref.watch(orderDetailsProvider(orderId));
 
     return Scaffold(
       backgroundColor: BookstoreTokens.background,
       appBar: const PremiumAppBar(title: 'Order Tracking'),
-      body: FutureBuilder<OrderItem?>(
-        future: orderRepo.getOrderById(orderId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: BookstoreTokens.primary),
-            );
-          }
-
-          final order = snapshot.data;
+      body: orderAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Unable to load order: $e')),
+        data: (order) {
           if (order == null) {
             return const Center(child: Text('Order not found'));
           }
-
           return ListView(
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -171,7 +163,8 @@ class OrderDetailsScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  step.description,
+                                  DateFormat('MMM d, yyyy - h:mm a')
+                                      .format(step.time.toLocal()),
                                   style: BookstoreTokens.body(
                                     fontSize: 12,
                                     color: BookstoreTokens.textSecondary,

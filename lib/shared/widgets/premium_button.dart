@@ -37,11 +37,11 @@ class PremiumButton extends StatelessWidget {
 
     switch (variant) {
       case PremiumButtonVariant.primary:
-        bg = const Color(0xFFBA7822);
+        bg = BookstoreTokens.primary;
         fg = Colors.white;
         shadows = [
           BoxShadow(
-            color: const Color(0xFFBA7822).withValues(alpha: 0.32),
+            color: BookstoreTokens.primary.withValues(alpha: 0.32),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -107,12 +107,16 @@ class PremiumButton extends StatelessWidget {
                           leadingIcon!,
                           const SizedBox(width: 8),
                         ],
-                        Text(
-                          label,
-                          style: BookstoreTokens.body(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: fg,
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: BookstoreTokens.body(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: fg,
+                            ),
                           ),
                         ),
                         if (trailingIcon != null) ...[

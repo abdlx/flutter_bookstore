@@ -1,3 +1,5 @@
+import '../../../core/utils/store_action.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +19,8 @@ class CartScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cartAsync = ref.watch(cartStreamProvider);
     final cartRepo = ref.read(cartRepositoryProvider);
+    final settings = ref.watch(storeSettingsProvider);
+    final ready = settings.hasValue && settings.value!.isNotEmpty;
 
     return Scaffold(
       backgroundColor: BookstoreTokens.background,
@@ -54,7 +58,7 @@ class CartScreen extends ConsumerWidget {
               child: _CircleHeaderBtn(
                 icon: Icons.more_vert_rounded,
                 onTap: () {
-                  _showCartMenu(context, cartRepo);
+                  _showCartMenu(context, ref, cartRepo);
                 },
               ),
             ),
@@ -94,10 +98,11 @@ class CartScreen extends ConsumerWidget {
                   ),
                   children: [
                     // Free Shipping Progress Card
-                    ShippingProgressCard(
-                      currentSubtotal: subtotal,
-                      threshold: cartRepo.freeShippingThreshold,
-                    ),
+                    if (ready)
+                      ShippingProgressCard(
+                        currentSubtotal: subtotal,
+                        threshold: cartRepo.freeShippingThreshold,
+                      ),
 
                     const SizedBox(height: 18),
 
@@ -107,11 +112,19 @@ class CartScreen extends ConsumerWidget {
                         padding: const EdgeInsets.only(bottom: 14),
                         child: CartItemCard(
                           item: item,
-                          onQuantityChanged: (newQty) {
-                            cartRepo.updateQuantity(item.id, newQty);
+                          onQuantityChanged: (newQty) async {
+                            await storeAction(
+                              context,
+                              ref,
+                              () => cartRepo.updateQuantity(item.id, newQty),
+                            );
                           },
-                          onRemove: () {
-                            cartRepo.removeFromCart(item.id);
+                          onRemove: () async {
+                            await storeAction(
+                              context,
+                              ref,
+                              () => cartRepo.removeFromCart(item.id),
+                            );
                           },
                           onTap: () => context.push('/book/${item.book.id}'),
                         ),
@@ -122,20 +135,25 @@ class CartScreen extends ConsumerWidget {
 
                     // Promo Code Card
                     _PromoCodeCard(
-                      onTap: () => _showPromoCodeDialog(context, cartRepo),
+                      onTap: () => _showPromoCodeDialog(context, ref, cartRepo),
                       isApplied: discount > 0,
                     ),
 
                     const SizedBox(height: 24),
 
                     // Order Summary Breakdown
-                    OrderSummary(
-                      subtotal: subtotal,
-                      shipping: shipping,
-                      tax: tax,
-                      discount: discount,
-                      total: total,
-                    ),
+                    if (!ready)
+                      const Text(
+                        'Shipping and tax settings are unavailable. Checkout will become available when the store is configured.',
+                      ),
+                    if (ready)
+                      OrderSummary(
+                        subtotal: subtotal,
+                        shipping: shipping,
+                        tax: tax,
+                        discount: discount,
+                        total: total,
+                      ),
 
                     const SizedBox(height: 20),
                   ],
@@ -174,7 +192,7 @@ class CartScreen extends ConsumerWidget {
                   ),
                   height: 54,
                   borderRadius: 27,
-                  onPressed: () => context.push('/checkout'),
+                  onPressed: ready ? () => context.push('/checkout') : null,
                 ),
               ),
             ],
@@ -184,7 +202,7 @@ class CartScreen extends ConsumerWidget {
     );
   }
 
-  void _showCartMenu(BuildContext context, dynamic cartRepo) {
+  void _showCartMenu(BuildContext context, WidgetRef ref, dynamic cartRepo) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -203,9 +221,9 @@ class CartScreen extends ConsumerWidget {
                   color: BookstoreTokens.error,
                 ),
                 title: const Text('Clear Cart'),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(ctx);
-                  cartRepo.clearCart();
+                  await storeAction(context, ref, () => cartRepo.clearCart());
                 },
               ),
             ],
@@ -215,7 +233,11 @@ class CartScreen extends ConsumerWidget {
     );
   }
 
-  void _showPromoCodeDialog(BuildContext context, dynamic cartRepo) {
+  void _showPromoCodeDialog(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic cartRepo,
+  ) {
     final controller = TextEditingController();
     showDialog(
       context: context,
@@ -234,7 +256,7 @@ class CartScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Try "BOOKWORM" for \$5 off your order',
+              'Enter a promotion code from the bookstore.',
               style: BookstoreTokens.body(
                 fontSize: 12.5,
                 color: BookstoreTokens.textSecondary,
@@ -249,16 +271,28 @@ class CartScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
+            onPressed: () async {
+              await cartRepo.applyPromoCode('');
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Remove code'),
+          ),
+          TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFBA7822),
+              backgroundColor: BookstoreTokens.primary,
               minimumSize: const Size(100, 42),
             ),
             onPressed: () async {
-              final ok = await cartRepo.applyPromoCode(controller.text);
+              bool ok = false;
+              if (!await storeAction(context, ref, () async {
+                ok = await cartRepo.applyPromoCode(controller.text);
+              })) {
+                return;
+              }
               if (ctx.mounted) {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -316,7 +350,7 @@ class _PromoCodeCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                isApplied ? 'Promo Applied: \$5 Discount' : 'Add a promo code',
+                isApplied ? 'Promotion applied' : 'Add a promo code',
                 style: BookstoreTokens.body(
                   fontSize: 14,
                   fontWeight: isApplied ? FontWeight.w600 : FontWeight.normal,

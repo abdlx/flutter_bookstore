@@ -32,6 +32,9 @@ image.png
 .pub/
 /build/
 /coverage/
+firebase_tests/node_modules/
+.firebase/
+*-debug.log
 
 # Symbolication related
 app.*.symbols

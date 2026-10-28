@@ -9,10 +9,10 @@ abstract class CartRepository {
   Future<void> removeFromCart(String cartItemId);
   Future<void> clearCart();
   double get subtotal;
-  double get shippingFee; // $5 if subtotal < $50, free otherwise
-  double get taxAmount; // ~8%
+  double get shippingFee; // From settings/store
+  double get taxAmount; // From settings/store
   double get discountAmount;
   double get total;
-  double get freeShippingThreshold; // $50
+  double get freeShippingThreshold; // From settings/store
   Future<bool> applyPromoCode(String code);
 }

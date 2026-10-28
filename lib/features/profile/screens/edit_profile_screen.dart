@@ -1,3 +1,5 @@
+import '../../../shared/widgets/profile_avatar.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,21 +22,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
+  late TextEditingController _avatarController;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     final profile = ref.read(authRepositoryProvider).currentUser;
+    _avatarController = TextEditingController(text: profile?.avatarUrl ?? '');
     _nameController = TextEditingController(text: profile?.fullName ?? '');
     _emailController = TextEditingController(text: profile?.email ?? '');
-    _phoneController = TextEditingController(
-      text: profile?.phone ?? '+1 (555) 234-5678',
-    );
+    _phoneController = TextEditingController(text: profile?.phone ?? '');
   }
 
   @override
   void dispose() {
+    _avatarController.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -51,10 +54,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
+        avatarUrl: _avatarController.text.trim(),
       );
-
-      // notify auth state
-      ref.read(authRepositoryProvider).currentUser;
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -64,6 +65,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ),
         );
         Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Unable to save: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -85,43 +91,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Center(
-                  child: Stack(
-                    children: [
-                      Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: BookstoreTokens.primary,
-                            width: 2,
-                          ),
-                          image: const DecorationImage(
-                            image: NetworkImage(
-                              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-                            ),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: const BoxDecoration(
-                            color: BookstoreTokens.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt_rounded,
-                            size: 16,
-                            color: BookstoreTokens.white,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: ProfileAvatar(
+                    url: ref.watch(currentUserStreamProvider).value?.avatarUrl,
+                    radius: 45,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -145,6 +117,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   label: 'Phone Number',
                   prefixIcon: Icons.phone_outlined,
                   keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 18),
+                PremiumTextField(
+                  controller: _avatarController,
+                  label: 'Profile Image URL',
+                  hint: 'https://...',
+                  keyboardType: TextInputType.url,
                 ),
                 const SizedBox(height: 32),
                 PremiumButton(

@@ -1,8 +1,9 @@
+import '../../../shared/widgets/profile_avatar.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/models/user_profile.dart';
 import '../../../core/theme/bookstore_tokens.dart';
 import '../../../providers/app_providers.dart';
 import '../../../shared/widgets/confirmation_dialog.dart';
@@ -54,30 +55,14 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: BookstoreTokens.primaryLight,
-                          width: 2,
-                        ),
-                        image: DecorationImage(
-                          image: NetworkImage(
-                            currentUser?.avatarUrl ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-                          ),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
+                    ProfileAvatar(url: currentUser?.avatarUrl, radius: 32),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            currentUser?.fullName ?? 'Alex Morgan',
+                            currentUser?.fullName ?? 'Reader',
                             style: BookstoreTokens.body(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
@@ -86,7 +71,7 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            currentUser?.email ?? 'alex.morgan@aptech.edu',
+                            currentUser?.email ?? '',
                             style: BookstoreTokens.body(
                               fontSize: 12.5,
                               color: BookstoreTokens.textSecondary,
@@ -114,7 +99,7 @@ class ProfileScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  currentUser?.membershipTier ?? 'Gold Member',
+                                  currentUser?.membershipTier ?? 'Member',
                                   style: BookstoreTokens.body(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -132,62 +117,6 @@ class ProfileScreen extends ConsumerWidget {
               ),
 
               const SizedBox(height: 20),
-
-              // Demo Role Switcher Card
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: BookstoreTokens.surfaceWarm,
-                  borderRadius: BorderRadius.circular(
-                    BookstoreTokens.radiusCard,
-                  ),
-                  border: Border.all(
-                    color: BookstoreTokens.primaryLight.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.shield_outlined,
-                      color: BookstoreTokens.primaryDark,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Demo Role Mode',
-                            style: BookstoreTokens.body(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: BookstoreTokens.primaryDark,
-                            ),
-                          ),
-                          Text(
-                            'Currently active: ${currentUser?.isAdmin == true ? "Admin" : "Customer"}',
-                            style: BookstoreTokens.body(
-                              fontSize: 11.5,
-                              color: BookstoreTokens.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Switch(
-                      value: currentUser?.isAdmin ?? false,
-                      activeThumbColor: BookstoreTokens.primary,
-                      onChanged: (isAdmin) {
-                        authRepo.switchDemoRole(
-                          isAdmin ? UserRole.admin : UserRole.customer,
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
 
               if (currentUser?.isAdmin == true) ...[
                 const SizedBox(height: 14),
@@ -227,22 +156,10 @@ class ProfileScreen extends ConsumerWidget {
               _MenuTile(
                 icon: Icons.credit_card_outlined,
                 title: 'Payment Methods',
-                subtitle: 'Credit cards, Apple Pay, and billing options',
+                subtitle: 'Manage cash on delivery',
                 onTap: () => context.push('/profile/payments'),
               ),
               const SizedBox(height: 10),
-              _MenuTile(
-                icon: Icons.help_outline_rounded,
-                title: 'Help & Concierge Support',
-                subtitle: 'Frequently asked questions and support desk',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Support concierge available 24/7'),
-                    ),
-                  );
-                },
-              ),
               const SizedBox(height: 20),
 
               // Logout Button

@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "501315295642",
-    "project_id": "bookstore-app-4dca8",
-    "storage_bucket": "bookstore-app-4dca8.firebasestorage.app"
+    "project_number": "665266600833",
+    "project_id": "flutter-project1-86917",
+    "storage_bucket": "flutter-project1-86917.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:501315295642:android:2446f792378afa3b604223",
+        "mobilesdk_app_id": "1:665266600833:android:703e072b131977d3424680",
         "android_client_info": {
           "package_name": "com.example.bookstore_app"
         }
@@ -15,7 +15,26 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAMXNPIHeFbia0SchV4yuGmZT4sTWqjzoY"
+          "current_key": "AIzaSyBI22h1IsB6XHr5Jdnx7nIgTdNaXS5SJ9g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665266600833:android:64920c634f0b5e57424680",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBI22h1IsB6XHr5Jdnx7nIgTdNaXS5SJ9g"
         }
       ],
       "services": {

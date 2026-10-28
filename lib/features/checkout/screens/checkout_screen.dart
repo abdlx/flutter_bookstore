@@ -25,8 +25,31 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final cartRepo = ref.read(cartRepositoryProvider);
     final addressesAsync = ref.watch(addressesStreamProvider);
     final paymentMethodsAsync = ref.watch(paymentMethodsStreamProvider);
-    final cartItems = cartRepo.getCartItems();
+    final cartAsync = ref.watch(cartStreamProvider);
+    final cartItems = cartAsync.value ?? [];
+    final settings = ref.watch(storeSettingsProvider);
 
+    if (_isProcessing || cartAsync.isLoading || settings.isLoading) {
+      return const Scaffold(
+        appBar: PremiumAppBar(title: 'Checkout'),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (cartAsync.hasError || settings.hasError || settings.value!.isEmpty) {
+      return Scaffold(
+        appBar: const PremiumAppBar(title: 'Checkout'),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              cartAsync.hasError
+                  ? 'Unable to load your cart: ${cartAsync.error}'
+                  : 'Checkout is unavailable until the store shipping and tax settings are configured.',
+            ),
+          ),
+        ),
+      );
+    }
     if (cartItems.isEmpty) {
       return Scaffold(
         backgroundColor: BookstoreTokens.background,
@@ -55,6 +78,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text('Each order supports up to five different titles.'),
+            const SizedBox(height: 16),
             // 1. Shipping Address Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -89,12 +114,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   );
                 }
 
-                _selectedAddressId ??= addresses
-                    .firstWhere(
-                      (a) => a.isDefault,
-                      orElse: () => addresses.first,
-                    )
-                    .id;
+                if (!addresses.any((a) => a.id == _selectedAddressId)) {
+                  _selectedAddressId = addresses
+                      .firstWhere(
+                        (a) => a.isDefault,
+                        orElse: () => addresses.first,
+                      )
+                      .id;
+                }
 
                 return Column(
                   children: addresses.map((addr) {
@@ -230,12 +257,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   );
                 }
 
-                _selectedPaymentId ??= payments
-                    .firstWhere(
-                      (p) => p.isDefault,
-                      orElse: () => payments.first,
-                    )
-                    .id;
+                if (!payments.any((p) => p.id == _selectedPaymentId)) {
+                  _selectedPaymentId = payments
+                      .firstWhere(
+                        (p) => p.isDefault,
+                        orElse: () => payments.first,
+                      )
+                      .id;
+                }
 
                 return Column(
                   children: payments.map((pm) {
@@ -344,7 +373,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           ),
                         ),
                         Text(
-                          '\$${ci.totalPrice.toStringAsFixed(0)}',
+                          '\$${ci.totalPrice.toStringAsFixed(2)}',
                           style: BookstoreTokens.body(
                             fontSize: 13.5,
                             fontWeight: FontWeight.bold,
@@ -372,50 +401,74 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
             // 5. Place Order Button
             PremiumButton(
-              label: 'Place Order • \$${total.toStringAsFixed(0)}',
+              label: 'Place Order • \$${total.toStringAsFixed(2)}',
               leadingIcon: const Icon(
                 Icons.check_circle_outline,
                 color: BookstoreTokens.white,
                 size: 20,
               ),
               isLoading: _isProcessing,
-              onPressed: () async {
-                setState(() => _isProcessing = true);
-                final addresses = await ref
-                    .read(addressRepositoryProvider)
-                    .getAddresses();
-                final payments = await ref
-                    .read(paymentMethodRepositoryProvider)
-                    .getPaymentMethods();
+              onPressed:
+                  _selectedAddressId == null ||
+                      _selectedPaymentId == null ||
+                      !settings.hasValue ||
+                      settings.value!.isEmpty
+                  ? null
+                  : () async {
+                      if (_isProcessing) return;
+                      setState(() => _isProcessing = true);
+                      try {
+                        final addresses = await ref
+                            .read(addressRepositoryProvider)
+                            .getAddresses();
+                        final payments = await ref
+                            .read(paymentMethodRepositoryProvider)
+                            .getPaymentMethods();
 
-                final selectedAddress = addresses.firstWhere(
-                  (a) => a.id == _selectedAddressId,
-                  orElse: () => addresses.first,
-                );
-                final selectedPayment = payments.firstWhere(
-                  (p) => p.id == _selectedPaymentId,
-                  orElse: () => payments.first,
-                );
+                        if (addresses.isEmpty || payments.isEmpty) {
+                          throw StateError(
+                            'Add a delivery address and payment method first.',
+                          );
+                        }
+                        final selectedAddress = addresses.firstWhere(
+                          (a) => a.id == _selectedAddressId,
+                          orElse: () => addresses.first,
+                        );
+                        final selectedPayment = payments.firstWhere(
+                          (p) => p.id == _selectedPaymentId,
+                          orElse: () => payments.first,
+                        );
 
-                final order = await ref
-                    .read(orderRepositoryProvider)
-                    .createOrder(
-                      items: cartItems,
-                      shippingAddress: selectedAddress,
-                      paymentMethod: selectedPayment,
-                      subtotal: subtotal,
-                      shipping: shipping,
-                      tax: tax,
-                      discount: discount,
-                      total: total,
-                    );
+                        final order = await ref
+                            .read(orderRepositoryProvider)
+                            .createOrder(
+                              items: cartItems,
+                              shippingAddress: selectedAddress,
+                              paymentMethod: selectedPayment,
+                              subtotal: subtotal,
+                              shipping: shipping,
+                              tax: tax,
+                              discount: discount,
+                              total: total,
+                            );
 
-                await cartRepo.clearCart();
+                        // The backend atomically clears the purchased cart.
 
-                if (!context.mounted) return;
-                setState(() => _isProcessing = false);
-                context.go('/order-confirmation/${order.id}');
-              },
+                        if (!context.mounted) return;
+                        setState(() => _isProcessing = false);
+                        context.go('/order-confirmation/${order.id}');
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Unable to place order: $e'),
+                            ),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => _isProcessing = false);
+                      }
+                    },
             ),
 
             const SizedBox(height: 30),

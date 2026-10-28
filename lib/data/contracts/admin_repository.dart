@@ -14,7 +14,7 @@ class AdminDashboardStats {
     required this.totalOrders,
     required this.totalBooks,
     required this.totalUsers,
-    this.growthRate = 14.8,
+    this.growthRate = 0,
   });
 }
 

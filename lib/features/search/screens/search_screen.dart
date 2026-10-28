@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/models/book.dart';
+import '../../../data/firestore/firestore_book_repository.dart';
 import '../../../core/theme/bookstore_tokens.dart';
 import '../../../providers/app_providers.dart';
 import '../../../shared/widgets/book_list_tile.dart';
@@ -23,7 +23,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _activeQuery = '';
   String _selectedGenre = 'All';
-  double _maxPrice = 50.0;
+  double? _maxPrice;
   String _sortBy = 'popular'; // 'popular', 'rating', 'price_low', 'price_high'
 
   @override
@@ -33,20 +33,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _openFilterSheet() {
+    final maxPrice = (ref.read(allBooksStreamProvider).value ?? [])
+        .fold<double>(1, (v, b) => b.price > v ? b.price : v)
+        .ceilToDouble();
     PremiumBottomSheet.show(
       context: context,
       title: 'Filter & Refine',
       child: StatefulBuilder(
         builder: (ctx, setSheetState) {
-          final genres = [
-            'All',
-            'Fiction',
-            'Non-Fiction',
-            'Education',
-            'Self Help',
-            'Fantasy',
-            'Sci-Fi',
-          ];
+          final genres = ref.read(catalogGenresProvider);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -92,7 +87,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ),
                   ),
                   Text(
-                    '\$${_maxPrice.toStringAsFixed(0)}',
+                    '\$${(_maxPrice ?? maxPrice).toStringAsFixed(2)}',
                     style: BookstoreTokens.body(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -102,10 +97,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ],
               ),
               Slider(
-                value: _maxPrice,
-                min: 5,
-                max: 50,
-                divisions: 9,
+                value: (_maxPrice ?? maxPrice).clamp(0, maxPrice),
+                min: 0,
+                max: maxPrice,
+                divisions: 100,
                 activeColor: BookstoreTokens.primary,
                 inactiveColor: BookstoreTokens.border,
                 onChanged: (val) {
@@ -162,7 +157,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final booksRepo = ref.read(bookRepositoryProvider);
+    final booksAsync = ref.watch(allBooksStreamProvider);
 
     return Scaffold(
       backgroundColor: BookstoreTokens.background,
@@ -187,7 +182,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
             // Active filters bar if modified
             if (_selectedGenre != 'All' ||
-                _maxPrice < 50 ||
+                _maxPrice != null ||
                 _sortBy != 'popular')
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -197,7 +192,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 child: Row(
                   children: [
                     Text(
-                      'Filters: $_selectedGenre • Up to \$${_maxPrice.toInt()}',
+                      'Filters: $_selectedGenre • ${_maxPrice == null ? 'Any price' : 'Up to \$${_maxPrice!.toStringAsFixed(2)}'}',
                       style: BookstoreTokens.body(
                         fontSize: 12,
                         color: BookstoreTokens.primaryDark,
@@ -208,7 +203,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       onTap: () {
                         setState(() {
                           _selectedGenre = 'All';
-                          _maxPrice = 50.0;
+                          _maxPrice = null;
                           _sortBy = 'popular';
                         });
                       },
@@ -229,23 +224,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
             // Search Results Future
             Expanded(
-              child: FutureBuilder<List<BookItem>>(
-                future: booksRepo.searchBooks(
-                  _activeQuery,
-                  genre: _selectedGenre,
-                  maxPrice: _maxPrice,
-                  sortBy: _sortBy,
-                ),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: BookstoreTokens.primary,
-                      ),
-                    );
-                  }
-
-                  final results = snapshot.data ?? [];
+              child: booksAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Unable to search: $e')),
+                data: (books) {
+                  final results = filterBooks(
+                    books,
+                    _activeQuery,
+                    genre: _selectedGenre,
+                    maxPrice: _maxPrice,
+                    sortBy: _sortBy,
+                  );
 
                   if (results.isEmpty) {
                     return EmptyState(
@@ -253,14 +242,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       title: 'No Books Found',
                       subtitle: _activeQuery.isEmpty
                           ? 'Adjust your filter criteria to view matching literature.'
-                          : 'No matching titles or authors for "$_activeQuery". Try "Alchemist", "Dune", or "Clear".',
+                          : 'No matching titles or authors for "$_activeQuery". Try another title or author.',
                       buttonLabel: 'Clear Search',
                       onButtonPressed: () {
                         _searchController.clear();
                         setState(() {
                           _activeQuery = '';
                           _selectedGenre = 'All';
-                          _maxPrice = 50.0;
+                          _maxPrice = null;
                         });
                       },
                     );

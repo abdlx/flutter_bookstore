@@ -7,8 +7,8 @@ class CartItem {
 
   const CartItem({required this.id, required this.book, this.quantity = 1});
 
-  double get unitPrice => book.price;
-  double get totalPrice => unitPrice * quantity;
+  double get unitPrice => (book.price * 100).round() / 100;
+  double get totalPrice => (unitPrice * 100).round() * quantity / 100;
 
   CartItem copyWith({String? id, BookItem? book, int? quantity}) {
     return CartItem(

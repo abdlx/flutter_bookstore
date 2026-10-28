@@ -1,3 +1,5 @@
+import '../../../core/utils/store_action.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -78,10 +80,16 @@ class _OrderManagementScreenState extends ConsumerState<OrderManagementScreen> {
                 minimumSize: const Size(100, 40),
               ),
               onPressed: () async {
-                await ref
-                    .read(adminRepositoryProvider)
-                    .updateOrderStatus(order.id, selected);
-                ref.invalidate(ordersStreamProvider);
+                if (!await storeAction(
+                  context,
+                  ref,
+                  () => ref
+                      .read(adminRepositoryProvider)
+                      .updateOrderStatus(order.id, selected),
+                )) {
+                  return;
+                }
+                ref.invalidate(adminOrdersStreamProvider);
                 if (ctx.mounted) {
                   Navigator.pop(ctx);
                   setState(() {});
@@ -100,7 +108,7 @@ class _OrderManagementScreenState extends ConsumerState<OrderManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ordersAsync = ref.watch(ordersStreamProvider);
+    final ordersAsync = ref.watch(adminOrdersStreamProvider);
 
     return Scaffold(
       backgroundColor: BookstoreTokens.background,
@@ -191,7 +199,7 @@ class _OrderManagementScreenState extends ConsumerState<OrderManagementScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Total: \$${order.total.toStringAsFixed(0)}',
+                          'Total: \$${order.total.toStringAsFixed(2)}',
                           style: BookstoreTokens.body(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,

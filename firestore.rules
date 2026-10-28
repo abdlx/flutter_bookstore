@@ -1,0 +1,136 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signedIn() { return request.auth != null; }
+  function owner(uid) { return signedIn() && request.auth.uid == uid; }
+  function admin() { return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'; }
+  function cents(n) { return math.round(n * 100); }
+  function line(d, i) { return i >= d.items.size() ? 0 : cents(d.items[i].book.price) * d.items[i].quantity; }
+  function subtotal(d) { return line(d,0)+line(d,1)+line(d,2)+line(d,3)+line(d,4); }
+  function validItem(d, i, orderId) {
+   return i >= d.items.size() || (d.itemIndex[d.items[i].bookId]==i && validPresentItem(d.items[i], orderId));
+  }
+  function validPresentItem(item, orderId) {
+   let after = getAfter(/databases/$(database)/documents/books/$(item.bookId)).data;
+   return item.keys().hasOnly(['bookId','quantity','book']) && item.quantity is int && item.quantity > 0
+    && after.lastOrderId == orderId;
+  }
+  function validPromo(d,sub) {
+   return d.promoCode == null || validPromoDoc(d,sub, get(/databases/$(database)/documents/promotions/$(d.promoCode)).data);
+  }
+  function validPromoDoc(d,sub,p) {
+   return p.active == true && p.type in ['fixed','percent'] && p.amount is number && p.amount >= 0
+    && (p.type != 'percent' || p.amount <= 100)
+    && sub >= cents(p.get('minimumSubtotal',0))
+    && (!p.keys().hasAny(['expiresAt']) || p.expiresAt > request.time);
+  }
+  function promoAmount(sub,p) {
+   let raw = p.type == 'percent' ? math.round(sub * cents(p.amount) / 10000.0) : cents(p.amount);
+   return raw > sub ? sub : raw;
+  }
+  function discount(d,sub) { return d.promoCode == null ? 0 : promoAmount(sub,get(/databases/$(database)/documents/promotions/$(d.promoCode)).data); }
+  function validTotals(d,sub) {
+   let s = get(/databases/$(database)/documents/settings/store).data;
+   let off = discount(d,sub);
+   let ship = sub >= cents(s.freeShippingThreshold) ? 0 : cents(s.shippingFee);
+   let tax = math.round((sub - off) * s.taxRate);
+   return s.taxRate is number && s.taxRate >= 0 && s.taxRate <= 1 && s.shippingFee >= 0 && s.freeShippingThreshold >= 0
+    && d.subtotal == sub / 100.0 && d.discount == off / 100.0 && d.shipping == ship / 100.0 && d.tax == tax / 100.0
+    && d.total == (sub-off+ship+tax) / 100.0;
+  }
+  function validNewOrder(d,orderId) {
+   let sub=cents(d.subtotal);
+   return signedIn() && d.keys().hasOnly(['userId','orderNumber','items','subtotal','shipping','tax','discount','total','addressId','shippingAddress','paymentMethodId','paymentMethod','status','paymentStatus','promoCode','createdAt','statusHistory','itemIndex'])
+    && d.userId == request.auth.uid && d.createdAt == request.time && d.status == 'placed' && d.paymentStatus == 'unpaid'
+    && d.statusHistory == {'placed': request.time} && d.orderNumber is string
+    && d.items is list && d.items.size() > 0 && d.items.size() <= 5 && sub == subtotal(d) && d.itemIndex is map && d.itemIndex.size()==d.items.size()
+    && validItem(d,0,orderId) && validItem(d,1,orderId) && validItem(d,2,orderId) && validItem(d,3,orderId) && validItem(d,4,orderId)
+    && d.shippingAddress == get(/databases/$(database)/documents/users/$(request.auth.uid)/addresses/$(d.addressId)).data
+    && d.paymentMethod == get(/databases/$(database)/documents/users/$(request.auth.uid)/paymentMethods/$(d.paymentMethodId)).data
+    && d.paymentMethod.type == 'cod' && validPromo(d,sub) && validTotals(d,sub);
+  }
+  function checkoutStock(bookId) {
+   let id = request.resource.data.lastOrderId;
+   let order = getAfter(/databases/$(database)/documents/orders/$(id)).data;
+   let item = order.items[order.itemIndex[bookId]];
+   return signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stockQuantity','lastOrderId'])
+    && !exists(/databases/$(database)/documents/orders/$(id))
+    && order.userId == request.auth.uid && order.createdAt == request.time && order.status == 'placed'
+    && item.book == resource.data && item.quantity is int && item.quantity > 0
+    && request.resource.data.stockQuantity == resource.data.stockQuantity - item.quantity && request.resource.data.stockQuantity >= 0;
+  }
+  function count(d,star) { return d.get('ratingCounts',{}).get(star,0); }
+  function oldRating(bookId) { return exists(/databases/$(database)/documents/books/$(bookId)/reviews/$(request.auth.uid)) ? get(/databases/$(database)/documents/books/$(bookId)/reviews/$(request.auth.uid)).data.rating : 0; }
+  function correctCount(before,star,score,prior,newScore,actual) { return actual == count(before,star) - (prior==score ? 1 : 0) + (newScore==score ? 1 : 0); }
+  function validReviewBook(bookId,before,d,score) {
+   let prior=oldRating(bookId);
+   let c1=count(d,'1'); let c2=count(d,'2'); let c3=count(d,'3'); let c4=count(d,'4'); let c5=count(d,'5');
+   let total=c1+c2+c3+c4+c5;
+   return d.ratingCounts.keys().hasOnly(['1','2','3','4','5'])
+    && correctCount(before,'1',1,prior,score,c1) && correctCount(before,'2',2,prior,score,c2) && correctCount(before,'3',3,prior,score,c3) && correctCount(before,'4',4,prior,score,c4) && correctCount(before,'5',5,prior,score,c5)
+    && d.reviewCount == total && d.rating == (c1+c2*2+c3*3+c4*4+c5*5) / float(total)
+    && d.ratingBreakdown.keys().hasOnly(['1','2','3','4','5']) && d.ratingBreakdown['1']==c1 / float(total) && d.ratingBreakdown['2']==c2 / float(total) && d.ratingBreakdown['3']==c3 / float(total) && d.ratingBreakdown['4']==c4 / float(total) && d.ratingBreakdown['5']==c5 / float(total);
+  }
+  function reviewAggregate(bookId) {
+   let r=getAfter(/databases/$(database)/documents/books/$(bookId)/reviews/$(request.auth.uid)).data;
+   return signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating','reviewCount','ratingCounts','ratingBreakdown'])
+    && r.createdAt==request.time && r.rating is int && r.rating>=1 && r.rating<=5
+    && validReviewBook(bookId,resource.data,request.resource.data,r.rating);
+  }
+  match /books/{bookId} {
+   allow read: if true;
+   allow create: if admin() && validBook() && !request.resource.data.keys().hasAny(['rating','reviewCount','ratingBreakdown','ratingCounts','lastOrderId']);
+   allow update: if (admin() && validBook() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rating','reviewCount','ratingBreakdown','ratingCounts','lastOrderId'])) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stockQuantity','lastOrderId']) && checkoutStock(bookId)) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating','reviewCount','ratingCounts','ratingBreakdown']) && reviewAggregate(bookId));
+   allow delete: if admin();
+   function validBook() { let d=request.resource.data; return d.title is string && d.title.size()>0 && d.author is string && d.author.size()>0 && d.price is number && d.price>=0 && d.stockQuantity is int && d.stockQuantity>=0; }
+   match /reviews/{reviewId} {
+    allow read: if true;
+    allow create, update: if owner(reviewId)
+     && request.resource.data.keys().hasOnly(['userId','userName','userAvatar','rating','content','createdAt','helpfulCount'])
+     && request.resource.data.userId == request.auth.uid && request.resource.data.rating is int && request.resource.data.rating>=1 && request.resource.data.rating<=5
+     && request.resource.data.content is string && request.resource.data.content.size()>0 && request.resource.data.content.size()<=4000
+     && request.resource.data.createdAt==request.time && request.resource.data.helpfulCount==0
+     && request.resource.data.userName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.fullName
+     && request.resource.data.userAvatar == (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('avatarUrl',null)==null ? '' : get(/databases/$(database)/documents/users/$(request.auth.uid)).data.avatarUrl)
+     && validReviewBook(bookId,get(/databases/$(database)/documents/books/$(bookId)).data,getAfter(/databases/$(database)/documents/books/$(bookId)).data,request.resource.data.rating);
+   }
+  }
+  match /settings/{id} {
+   allow read: if id == 'store' || admin();
+   allow create, update: if admin() && (id != 'store' || validStoreSettings());
+   allow delete: if admin();
+   function validStoreSettings() {
+    let d = request.resource.data;
+    return d.keys().hasOnly(['shippingFee','freeShippingThreshold','taxRate','storefrontUrl'])
+     && d.shippingFee is number && d.shippingFee >= 0
+     && d.freeShippingThreshold is number && d.freeShippingThreshold >= 0
+     && d.taxRate is number && d.taxRate >= 0 && d.taxRate <= 1
+     && d.get('storefrontUrl','') is string;
+   }
+  }
+  match /promotions/{id} { allow get: if signedIn(); allow list: if admin(); allow write: if admin(); }
+  match /users/{uid} {
+   allow read: if owner(uid) || admin();
+   allow create: if owner(uid) && request.resource.data.keys().hasOnly(['fullName','email','role','membershipTier','memberSince','phone','avatarUrl']) && request.resource.data.role=='customer' && request.resource.data.membershipTier=='Member' && request.resource.data.email==request.auth.token.email;
+   allow update: if (owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName','email','phone','avatarUrl','updatedAt','addressesDefaultId','paymentMethodsDefaultId']) && request.resource.data.email==request.auth.token.email)
+    || (admin() && !owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role']) && request.resource.data.role in ['admin','customer']);
+   match /cart/{bookId} {
+    allow read, delete: if owner(uid);
+    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['bookId','quantity']) && request.resource.data.bookId==bookId && request.resource.data.quantity is int && request.resource.data.quantity>0 && request.resource.data.quantity<=get(/databases/$(database)/documents/books/$(bookId)).data.stockQuantity;
+   }
+   match /wishlist/{bookId} { allow read,delete: if owner(uid); allow create,update: if owner(uid) && request.resource.data.keys().hasOnly(['bookId']) && request.resource.data.bookId==bookId && exists(/databases/$(database)/documents/books/$(bookId)); }
+   match /addresses/{id} { allow read,delete: if owner(uid); allow create,update: if owner(uid) && request.resource.data.keys().hasOnly(['label','recipientName','phone','street','city','state','postalCode','country','isDefault']) && request.resource.data.recipientName is string && request.resource.data.recipientName.size()>0 && request.resource.data.street is string && request.resource.data.street.size()>0 && request.resource.data.isDefault is bool; }
+   match /paymentMethods/{id} { allow read,delete: if owner(uid); allow create,update: if owner(uid) && request.resource.data.keys().hasOnly(['type','title','subtitle','isDefault']) && request.resource.data.type=='cod' && request.resource.data.title is string && request.resource.data.subtitle is string && request.resource.data.isDefault is bool; }
+  }
+  match /orders/{orderId} {
+   allow get: if signedIn() && (!exists(/databases/$(database)/documents/orders/$(orderId)) || resource.data.userId==request.auth.uid || admin());
+   allow list: if signedIn() && (resource.data.userId==request.auth.uid || admin());
+   allow create: if validNewOrder(request.resource.data,orderId);
+   allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','paymentStatus','statusHistory'])
+    && request.resource.data.statusHistory.diff(resource.data.statusHistory).affectedKeys().hasOnly([request.resource.data.status])
+    && request.resource.data.statusHistory[request.resource.data.status] == request.time
+    && request.resource.data.paymentStatus == (request.resource.data.status=='delivered' ? 'paid' : resource.data.paymentStatus)
+    && ((resource.data.status=='placed' && request.resource.data.status in ['confirmed','cancelled']) || (resource.data.status=='confirmed' && request.resource.data.status in ['processing','cancelled']) || (resource.data.status=='processing' && request.resource.data.status in ['shipped','cancelled']) || (resource.data.status=='shipped' && request.resource.data.status=='delivered'));
+  }
+ }
+}

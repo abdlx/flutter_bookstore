@@ -1,5 +1,5 @@
 name: bookstore_app
-description: "A new Flutter project."
+description: "Aptech Book Store with Firebase-backed shopping and administration."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -72,6 +72,15 @@ flutter:
   assets:
     - assets/theme/
     - assets/images/
+    - assets/fonts/
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter[opsz,wght].ttf
+    - family: Cormorant Garamond
+      fonts:
+        - asset: assets/fonts/CormorantGaramond[wght].ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

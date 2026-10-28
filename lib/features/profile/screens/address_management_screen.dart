@@ -1,3 +1,5 @@
+import '../../../core/utils/store_action.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -52,9 +54,19 @@ class AddressManagementScreen extends ConsumerWidget {
                     final addr = addresses[index];
                     return _AddressCard(
                       address: addr,
-                      onSetDefault: () =>
-                          addressRepo.setDefaultAddress(addr.id),
-                      onDelete: () => addressRepo.deleteAddress(addr.id),
+                      onEdit: () => context.push(
+                        '/profile/addresses/edit?id=${Uri.encodeComponent(addr.id)}',
+                      ),
+                      onSetDefault: () => storeAction(
+                        context,
+                        ref,
+                        () => addressRepo.setDefaultAddress(addr.id),
+                      ),
+                      onDelete: () => storeAction(
+                        context,
+                        ref,
+                        () => addressRepo.deleteAddress(addr.id),
+                      ),
                     );
                   },
                 ),
@@ -89,11 +101,13 @@ class _AddressCard extends StatelessWidget {
   final AddressItem address;
   final VoidCallback onSetDefault;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
   const _AddressCard({
     required this.address,
     required this.onSetDefault,
     required this.onDelete,
+    required this.onEdit,
   });
 
   @override
@@ -159,6 +173,11 @@ class _AddressCard extends StatelessWidget {
                     ),
                   ],
                 ],
+              ),
+              IconButton(
+                onPressed: onEdit,
+                tooltip: 'Edit address',
+                icon: const Icon(Icons.edit_outlined, size: 20),
               ),
               IconButton(
                 icon: const Icon(

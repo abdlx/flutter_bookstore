@@ -1,3 +1,5 @@
+import '../../../core/utils/store_action.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -66,9 +68,23 @@ class WishlistScreen extends ConsumerWidget {
                         size: 22,
                       ),
                       tooltip: 'Move to Cart',
-                      onPressed: () {
-                        cartRepo.addToCart(book);
-                        wishlistRepo.removeFromWishlist(book.id);
+                      onPressed: () async {
+                        if (!await storeAction(
+                          context,
+                          ref,
+                          () => cartRepo.addToCart(book),
+                        )) {
+                          return;
+                        }
+                        if (!context.mounted) return;
+                        if (!await storeAction(
+                          context,
+                          ref,
+                          () => wishlistRepo.removeFromWishlist(book.id),
+                        )) {
+                          return;
+                        }
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Moved "${book.title}" to cart'),
@@ -84,8 +100,15 @@ class WishlistScreen extends ConsumerWidget {
                         size: 22,
                       ),
                       tooltip: 'Remove from Wishlist',
-                      onPressed: () {
-                        wishlistRepo.removeFromWishlist(book.id);
+                      onPressed: () async {
+                        if (!context.mounted) return;
+                        if (!await storeAction(
+                          context,
+                          ref,
+                          () => wishlistRepo.removeFromWishlist(book.id),
+                        )) {
+                          return;
+                        }
                       },
                     ),
                   ],

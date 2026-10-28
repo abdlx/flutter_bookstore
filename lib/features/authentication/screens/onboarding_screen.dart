@@ -18,17 +18,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<Map<String, dynamic>> _slides = [
     {
       'title': 'Discover Timeless Works',
-      'subtitle': 'Immerse yourself in our hand-curated collection of classic literature, award-winning poetry, and thought-provoking nonfiction.',
+      'subtitle':
+          'Browse our catalog, explore genres, and find your next read.',
       'icon': Icons.auto_stories_rounded,
     },
     {
       'title': 'Your Personal Literary Haven',
-      'subtitle': 'Curate custom wishlists, receive tailored recommendations, and celebrate the transformative pleasure of physical books.',
+      'subtitle': 'Save books to your wishlist and explore recommendations selected by the store.',
       'icon': Icons.bookmark_added_rounded,
     },
     {
-      'title': 'Pristine White-Glove Delivery',
-      'subtitle': 'Enjoy complimentary shipping on orders over \$50 with careful archival packaging and live real-time doorstep tracking.',
+      'title': 'Follow Your Order',
+      'subtitle': 'Review delivery fees before checkout and follow your order as the store updates its fulfillment status.',
       'icon': Icons.local_shipping_rounded,
     },
   ];

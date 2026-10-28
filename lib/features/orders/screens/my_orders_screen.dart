@@ -160,7 +160,7 @@ class _OrderCard extends StatelessWidget {
                     children: [
                       const TextSpan(text: 'Total: '),
                       TextSpan(
-                        text: '\$${order.total.toStringAsFixed(0)}',
+                        text: '\$${order.total.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: BookstoreTokens.textPrimary,

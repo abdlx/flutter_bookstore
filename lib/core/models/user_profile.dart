@@ -17,7 +17,7 @@ class UserProfile {
     this.phone,
     this.avatarUrl,
     this.role = UserRole.customer,
-    this.membershipTier = 'Gold Member',
+    this.membershipTier = 'Member',
     required this.memberSince,
   });
 

@@ -99,7 +99,7 @@ class CartItemCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFBA7822),
+                          color: BookstoreTokens.primary,
                         ),
                       ),
                     ],
@@ -112,7 +112,7 @@ class CartItemCard extends StatelessWidget {
                       QuantityStepper(
                         quantity: item.quantity,
                         height: 32,
-                        backgroundColor: const Color(0xFFF7F2E8),
+                        backgroundColor: BookstoreTokens.surfaceWarm,
                         onChanged: onQuantityChanged,
                       ),
                       IconButton(

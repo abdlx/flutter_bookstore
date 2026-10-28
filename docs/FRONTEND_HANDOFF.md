@@ -1,58 +1,15 @@
-# Frontend Engineering Team Handoff
+# Application handoff
 
-## Summary
+The feature-based Flutter application now binds every repository to Firebase Auth/Firestore. Runtime mock implementations and the obsolete duplicate app have been removed. See [backend integration](BACKEND_INTEGRATION.md) for collection fields, server behavior, deployment, first-admin setup and local emulator commands.
 
-The complete frontend presentation system for the **Aptech Book Store** mobile application has been faithfully reconstructed to match the canonical visual source of truth (`image.png`) and extended to all 24 required screens.
+The original warm ivory/gold palette, Cormorant Garamond headings, Inter body text, shared widgets and tab navigation remain. Fonts are bundled for offline consistency. Covers use the persisted cover URL with a neutral title placeholder if the image is missing.
 
-### Key Highlights
-1. **100% Visual Fidelity**: Home / Discover, Book Details, and Shopping Cart exactly reproduce the approved layouts, proportions, colors, typography, and component styling.
-2. **Centralized Design System**: Canonical JSON tokens reside in `assets/theme/bookstore_theme.json` and are actively bridged into Flutter via `lib/core/theme/bookstore_tokens.dart` and `lib/core/theme/bookstore_theme_data.dart`.
-3. **Decoupled Architecture**: All screens consume abstract contracts in `lib/data/contracts/` through Riverpod providers in `lib/providers/app_providers.dart`.
-4. **Rich Interactivity**: Live local shopping cart calculations, quantity adjustment, wishlist toggles, real-time catalog search and filtering, simulated checkout, order tracking, address and payment management, and admin inventory CRUD.
-5. **No Production Assumptions**: No fake security guarantees, secrets, or hardcoded API keys.
+Implemented flows include authentication and password reset, live catalog and search filters, book details and reviews, customer wishlist/cart persistence, address create/edit/default/delete, cash-on-delivery methods, checkout validated by Firestore rules, live order receipts/tracking, profile editing, administrator inventory/recommendations, all-customer fulfillment, and protected role management.
 
----
+All operational data must be supplied in Firestore. The app never fills empty collections with sample content or turns failed reads into fake success. The owner selected flutter-project1-86917; the free-plan Firestore rules are deployed, Email/Password authentication is enabled, and the owner's registered account has administrator access. Configure real shipping/tax settings and actual inventory through Admin Management before accepting orders.
 
-## How to Run the Application
+Card charging is not implemented because no merchant provider is configured. The UI only offers cash on delivery and never stores card numbers or CVV.
 
-Once Flutter SDK is installed and added to your `PATH`:
+Checkout supports up to five distinct titles per order on the Spark plan. The application no longer depends on Cloud Functions.
 
-```bash
-# 1. Fetch dependencies
-flutter pub get
-
-# 2. Run static analysis
-flutter analyze
-
-# 3. Execute automated test suites
-flutter test
-
-# 4. Launch on emulator, simulator, or device
-flutter run
-```
-
----
-
-## Testing & Role Switching
-
-1. **Customer Mode (Alex Morgan)**:
-   - Default login is pre-filled with `alex.morgan@aptech.edu` / `secret123`.
-   - Access Home, Catalog, Search, Book Details, Wishlist, Cart ($47 subtotal -> $7 away from free shipping, $56 total), and Checkout.
-2. **Admin Mode (Dr. Sarah Sterling)**:
-   - On the Login screen, tap the "Admin" quick-fill button, or on the Profile screen, toggle the "Demo Role Mode" switch.
-   - Tap "Admin Management Dashboard" to access Catalog & Inventory management, Order fulfillment updates, and User management.
-
----
-
-## What Remains for the Backend Team
-
-1. Implement concrete classes in `lib/data/services/` that satisfy the interfaces in `lib/data/contracts/`:
-   - `AuthRepository` (Firebase Auth or OAuth2)
-   - `BookRepository` (Firestore or REST endpoints)
-   - `CartRepository` (Remote cart sync or session state)
-   - `OrderRepository` (Payment gateway and orders DB)
-   - `ReviewRepository` (Reviews collection)
-   - `ProfileRepository`, `AddressRepository`, `PaymentMethodRepository`
-   - `AdminRepository` (Role-protected management endpoints)
-2. In `lib/providers/app_providers.dart`, update provider instances to instantiate your production repository classes.
-3. Replace demo images if custom high-res assets are provisioned on your CDN.
+Validation on 2026-10-28: Flutter analysis passed with no issues, all 13 Flutter tests passed, and all 10 Firestore emulator tests passed. Web release and Android ARM64 debug builds succeeded. Live read checks confirmed public catalog access and denied unauthenticated customer-directory access. The owner registered through the live app; no production orders or catalog records were fabricated for testing. iOS, macOS and Windows native builds were not verified on this machine.

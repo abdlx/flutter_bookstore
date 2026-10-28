@@ -1,3 +1,5 @@
+import '../../../core/utils/store_action.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,16 +20,6 @@ class CatalogScreen extends ConsumerStatefulWidget {
 
 class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   bool _isGridView = true;
-  final List<String> _genres = [
-    'All',
-    'Fiction',
-    'Non-Fiction',
-    'Education',
-    'Self Help',
-    'Fantasy',
-    'Sci-Fi',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final booksAsync = ref.watch(allBooksStreamProvider);
@@ -81,7 +73,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
             // Horizontal Genre chips
             CategorySelector(
-              categories: _genres,
+              categories: ref.watch(catalogGenresProvider),
               selectedCategory: selectedGenre,
               onSelected: (g) {
                 ref.read(selectedGenreProvider.notifier).state = g;
@@ -183,8 +175,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         return BookCard(
                           book: book,
                           onTap: () => context.push('/book/${book.id}'),
-                          onAddToCart: () {
-                            cartRepo.addToCart(book);
+                          onAddToCart: () async {
+                            if (!await storeAction(
+                              context,
+                              ref,
+                              () => cartRepo.addToCart(book),
+                            )) {
+                              return;
+                            }
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text('Added "${book.title}" to cart'),
@@ -211,8 +210,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               Icons.add_shopping_cart_rounded,
                               color: BookstoreTokens.primary,
                             ),
-                            onPressed: () {
-                              cartRepo.addToCart(book);
+                            onPressed: () async {
+                              if (!await storeAction(
+                                context,
+                                ref,
+                                () => cartRepo.addToCart(book),
+                              )) {
+                                return;
+                              }
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'bookstore_tokens.dart';
 
@@ -35,91 +34,106 @@ class BookstoreThemeData {
 
     final textTheme = TextTheme(
       // Display: Cormorant Garamond
-      displayLarge: GoogleFonts.cormorantGaramond(
+      displayLarge: TextStyle(
+        fontFamily: 'Cormorant Garamond',
         fontSize: 34,
         fontWeight: FontWeight.bold,
         color: BookstoreTokens.textPrimary,
         height: 1.15,
       ),
-      displayMedium: GoogleFonts.cormorantGaramond(
+      displayMedium: TextStyle(
+        fontFamily: 'Cormorant Garamond',
         fontSize: 28,
         fontWeight: FontWeight.bold,
         color: BookstoreTokens.textPrimary,
         height: 1.2,
       ),
-      displaySmall: GoogleFonts.cormorantGaramond(
+      displaySmall: TextStyle(
+        fontFamily: 'Cormorant Garamond',
         fontSize: 24,
         fontWeight: FontWeight.bold,
         color: BookstoreTokens.textPrimary,
         height: 1.25,
       ),
-      headlineLarge: GoogleFonts.cormorantGaramond(
+      headlineLarge: TextStyle(
+        fontFamily: 'Cormorant Garamond',
         fontSize: 26,
         fontWeight: FontWeight.bold,
         color: BookstoreTokens.textPrimary,
         height: 1.25,
       ),
-      headlineMedium: GoogleFonts.cormorantGaramond(
+      headlineMedium: TextStyle(
+        fontFamily: 'Cormorant Garamond',
         fontSize: 22,
         fontWeight: FontWeight.w700,
         color: BookstoreTokens.textPrimary,
         height: 1.3,
       ),
-      headlineSmall: GoogleFonts.cormorantGaramond(
+      headlineSmall: TextStyle(
+        fontFamily: 'Cormorant Garamond',
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: BookstoreTokens.textPrimary,
         height: 1.3,
       ),
       // Inter for UI, body, labels
-      titleLarge: GoogleFonts.inter(
+      titleLarge: TextStyle(
+        fontFamily: 'Inter',
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: BookstoreTokens.textPrimary,
         height: 1.35,
       ),
-      titleMedium: GoogleFonts.inter(
+      titleMedium: TextStyle(
+        fontFamily: 'Inter',
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: BookstoreTokens.textPrimary,
         height: 1.4,
       ),
-      titleSmall: GoogleFonts.inter(
+      titleSmall: TextStyle(
+        fontFamily: 'Inter',
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: BookstoreTokens.textPrimary,
         height: 1.4,
       ),
-      bodyLarge: GoogleFonts.inter(
+      bodyLarge: TextStyle(
+        fontFamily: 'Inter',
         fontSize: 16,
         fontWeight: FontWeight.normal,
         color: BookstoreTokens.textPrimary,
         height: 1.5,
       ),
-      bodyMedium: GoogleFonts.inter(
+      bodyMedium: TextStyle(
+        fontFamily: 'Inter',
         fontSize: 14,
         fontWeight: FontWeight.normal,
         color: BookstoreTokens.textPrimary,
         height: 1.5,
       ),
-      bodySmall: GoogleFonts.inter(
+      bodySmall: TextStyle(
+        fontFamily: 'Inter',
         fontSize: 12,
         fontWeight: FontWeight.normal,
         color: BookstoreTokens.textSecondary,
         height: 1.4,
       ),
-      labelLarge: GoogleFonts.inter(
+      labelLarge: TextStyle(
+        fontFamily: 'Inter',
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: BookstoreTokens.textPrimary,
         letterSpacing: 0.2,
       ),
-      labelMedium: GoogleFonts.inter(
+      labelMedium: TextStyle(
+        fontFamily: 'Inter',
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: BookstoreTokens.textSecondary,
       ),
-      labelSmall: GoogleFonts.inter(
+      labelSmall: TextStyle(
+        fontFamily: 'Inter',
         fontSize: 11,
         fontWeight: FontWeight.w500,
         color: BookstoreTokens.textMuted,
@@ -132,7 +146,7 @@ class BookstoreThemeData {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: BookstoreTokens.background,
       textTheme: textTheme,
-      fontFamily: GoogleFonts.inter().fontFamily,
+      fontFamily: 'Inter',
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -140,7 +154,8 @@ class BookstoreThemeData {
         centerTitle: true,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         iconTheme: const IconThemeData(color: BookstoreTokens.textPrimary),
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: TextStyle(
+          fontFamily: 'Inter',
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: BookstoreTokens.textPrimary,
@@ -167,7 +182,8 @@ class BookstoreThemeData {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(BookstoreTokens.radiusButton),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 15,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
@@ -184,7 +200,8 @@ class BookstoreThemeData {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(BookstoreTokens.radiusButton),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
@@ -193,7 +210,8 @@ class BookstoreThemeData {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: BookstoreTokens.primary,
-          textStyle: GoogleFonts.inter(
+          textStyle: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -225,12 +243,14 @@ class BookstoreThemeData {
           borderRadius: BorderRadius.circular(BookstoreTokens.radiusInput),
           borderSide: const BorderSide(color: BookstoreTokens.error, width: 1),
         ),
-        hintStyle: GoogleFonts.inter(
+        hintStyle: TextStyle(
+          fontFamily: 'Inter',
           fontSize: 14,
           color: BookstoreTokens.textMuted,
           fontWeight: FontWeight.normal,
         ),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: TextStyle(
+          fontFamily: 'Inter',
           fontSize: 14,
           color: BookstoreTokens.textSecondary,
         ),
@@ -250,12 +270,14 @@ class BookstoreThemeData {
           borderRadius: BorderRadius.circular(BookstoreTokens.radiusPill),
           side: BorderSide.none,
         ),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: TextStyle(
+          fontFamily: 'Inter',
           fontSize: 13,
           fontWeight: FontWeight.w500,
           color: BookstoreTokens.textSecondary,
         ),
-        secondaryLabelStyle: GoogleFonts.inter(
+        secondaryLabelStyle: TextStyle(
+          fontFamily: 'Inter',
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: BookstoreTokens.white,

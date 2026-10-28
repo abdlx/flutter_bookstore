@@ -1,3 +1,5 @@
+import '../../../core/utils/store_action.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -108,7 +110,14 @@ class _BookManagementScreenState extends ConsumerState<BookManagementScreen> {
                           isDestructive: true,
                         );
                         if (confirm == true) {
-                          await adminRepo.deleteBook(book.id);
+                          if (!context.mounted ||
+                              !await storeAction(
+                                context,
+                                ref,
+                                () => adminRepo.deleteBook(book.id),
+                              )) {
+                            return;
+                          }
                           ref.invalidate(allBooksStreamProvider);
                         }
                       },
@@ -190,7 +199,7 @@ class _AdminBookTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${book.author} • \$${book.price.toStringAsFixed(0)}',
+                  '${book.author} • \$${book.price.toStringAsFixed(2)}',
                   style: BookstoreTokens.body(
                     fontSize: 12,
                     color: BookstoreTokens.textSecondary,

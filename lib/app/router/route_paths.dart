@@ -34,4 +34,5 @@ class RoutePaths {
   static const String adminAddEditBook = '/admin/books/edit';
   static const String adminOrders = '/admin/orders';
   static const String adminUsers = '/admin/users';
+  static const String adminSettings = '/admin/settings';
 }

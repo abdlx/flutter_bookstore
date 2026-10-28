@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/models/order.dart';
 import '../../../core/theme/bookstore_tokens.dart';
 import '../../../providers/app_providers.dart';
 import '../../../shared/widgets/premium_button.dart';
@@ -14,15 +13,17 @@ class OrderConfirmationScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orderRepo = ref.read(orderRepositoryProvider);
+    final orderAsync = ref.watch(orderDetailsProvider(orderId));
 
     return Scaffold(
       backgroundColor: BookstoreTokens.background,
-      body: FutureBuilder<OrderItem?>(
-        future: orderRepo.getOrderById(orderId),
-        builder: (context, snapshot) {
-          final order = snapshot.data;
-
+      body: orderAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Unable to load order: $e')),
+        data: (order) {
+          if (order == null) {
+            return const Center(child: Text('Order not found'));
+          }
           return SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -78,9 +79,7 @@ class OrderConfirmationScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      order != null
-                          ? 'Order #${order.orderNumber} has been received and is being prepared for dispatch.'
-                          : 'Your order has been received and confirmed.',
+                      'Order #${order.orderNumber} has been received.',
                       textAlign: TextAlign.center,
                       style: BookstoreTokens.body(
                         fontSize: 14,
@@ -91,45 +90,44 @@ class OrderConfirmationScreen extends ConsumerWidget {
                     const SizedBox(height: 28),
 
                     // Order Details Card
-                    if (order != null)
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: BookstoreTokens.surface,
-                          borderRadius: BorderRadius.circular(
-                            BookstoreTokens.radiusCard,
-                          ),
-                          border: Border.all(
-                            color: BookstoreTokens.border,
-                            width: 1,
-                          ),
-                          boxShadow: BookstoreTokens.cardShadow,
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: BookstoreTokens.surface,
+                        borderRadius: BorderRadius.circular(
+                          BookstoreTokens.radiusCard,
                         ),
-                        child: Column(
-                          children: [
-                            _buildInfoRow(
-                              'Order Total',
-                              '\$${order.total.toStringAsFixed(0)}',
-                              isBold: true,
-                            ),
-                            const Divider(
-                              height: 20,
-                              color: BookstoreTokens.divider,
-                            ),
-                            _buildInfoRow(
-                              'Delivery Address',
-                              order.shippingAddress.label,
-                            ),
-                            const SizedBox(height: 8),
-                            _buildInfoRow('Payment', order.paymentMethod.title),
-                            const SizedBox(height: 8),
-                            _buildInfoRow(
-                              'Items Purchased',
-                              '${order.items.length} titles',
-                            ),
-                          ],
+                        border: Border.all(
+                          color: BookstoreTokens.border,
+                          width: 1,
                         ),
+                        boxShadow: BookstoreTokens.cardShadow,
                       ),
+                      child: Column(
+                        children: [
+                          _buildInfoRow(
+                            'Order Total',
+                            '\$${order.total.toStringAsFixed(2)}',
+                            isBold: true,
+                          ),
+                          const Divider(
+                            height: 20,
+                            color: BookstoreTokens.divider,
+                          ),
+                          _buildInfoRow(
+                            'Delivery Address',
+                            order.shippingAddress.label,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildInfoRow('Payment', order.paymentMethod.title),
+                          const SizedBox(height: 8),
+                          _buildInfoRow(
+                            'Items Purchased',
+                            '${order.items.length} titles',
+                          ),
+                        ],
+                      ),
+                    ),
 
                     const SizedBox(height: 32),
 

@@ -7,6 +7,7 @@ import '../../features/admin/screens/admin_dashboard_screen.dart';
 import '../../features/admin/screens/book_management_screen.dart';
 import '../../features/admin/screens/order_management_screen.dart';
 import '../../features/admin/screens/user_management_screen.dart';
+import '../../features/admin/screens/store_settings_screen.dart';
 import '../../features/authentication/screens/forgot_password_screen.dart';
 import '../../features/authentication/screens/login_screen.dart';
 import '../../features/authentication/screens/onboarding_screen.dart';
@@ -35,9 +36,51 @@ import '../../shared/widgets/premium_bottom_navigation.dart';
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  return GoRouter(
+  final refresh = ValueNotifier<int>(0);
+  ref.listen(currentUserStreamProvider, (_, _) => refresh.value++);
+  final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/home',
+    initialLocation: '/',
+    refreshListenable: refresh,
+    redirect: (context, state) {
+      final path = state.uri.path;
+      final signedIn = ref.read(firebaseAuthProvider).currentUser != null;
+      final profileState = ref.read(currentUserStreamProvider);
+      final profile = profileState.value;
+      final authPage = [
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/onboarding',
+        '/',
+      ].contains(path);
+      final publicPage =
+          authPage ||
+          path == '/home' ||
+          path == '/explore' ||
+          path == '/search' ||
+          path.startsWith('/book/');
+      if (!signedIn && !publicPage) {
+        return '/login?from=${Uri.encodeComponent(state.uri.toString())}';
+      }
+      if (path.startsWith('/admin') &&
+          signedIn &&
+          profile == null &&
+          !profileState.hasError) {
+        return null;
+      }
+      if (path.startsWith('/admin') && profile?.isAdmin != true) return '/home';
+      if (signedIn && profile != null && authPage) {
+        final from = state.uri.queryParameters['from'];
+        return from != null &&
+                from.startsWith('/') &&
+                !from.startsWith('//') &&
+                !from.startsWith('/login')
+            ? from
+            : '/home';
+      }
+      return null;
+    },
     routes: [
       // Splash
       GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
@@ -147,7 +190,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/book/:id',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final id = state.pathParameters['id'] ?? 'book_1';
+          final id = state.pathParameters['id']!;
           return BookDetailsScreen(bookId: id);
         },
       ),
@@ -155,7 +198,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/book/:id/reviews',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final id = state.pathParameters['id'] ?? 'book_1';
+          final id = state.pathParameters['id']!;
           return ReviewsScreen(bookId: id);
         },
       ),
@@ -170,7 +213,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/order-confirmation/:orderId',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final orderId = state.pathParameters['orderId'] ?? 'ord_1';
+          final orderId = state.pathParameters['orderId']!;
           return OrderConfirmationScreen(orderId: orderId);
         },
       ),
@@ -185,7 +228,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/orders/:id',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final id = state.pathParameters['id'] ?? 'ord_1';
+          final id = state.pathParameters['id']!;
           return OrderDetailsScreen(orderId: id);
         },
       ),
@@ -204,7 +247,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile/addresses/edit',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const AddEditAddressScreen(),
+        builder: (context, state) =>
+            AddEditAddressScreen(addressId: state.uri.queryParameters['id']),
       ),
       GoRoute(
         path: '/profile/payments',
@@ -246,6 +290,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const UserManagementScreen(),
       ),
+      GoRoute(
+        path: '/admin/settings',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const StoreSettingsScreen(),
+      ),
     ],
   );
+  ref.onDispose(() {
+    router.dispose();
+    refresh.dispose();
+  });
+  return router;
 });

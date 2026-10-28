@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Strongly-typed Dart representation of bookstore_theme.json design tokens.
 class BookstoreTokens {
@@ -118,7 +117,8 @@ class BookstoreTokens {
     double? height,
     FontStyle? fontStyle,
   }) {
-    return GoogleFonts.cormorantGaramond(
+    return TextStyle(
+      fontFamily: 'Cormorant Garamond',
       fontSize: fontSize ?? 34,
       fontWeight: fontWeight ?? FontWeight.bold,
       color: color ?? textPrimary,
@@ -134,7 +134,8 @@ class BookstoreTokens {
     double? height,
     TextDecoration? decoration,
   }) {
-    return GoogleFonts.inter(
+    return TextStyle(
+      fontFamily: 'Inter',
       fontSize: fontSize ?? 14,
       fontWeight: fontWeight ?? FontWeight.normal,
       color: color ?? textPrimary,

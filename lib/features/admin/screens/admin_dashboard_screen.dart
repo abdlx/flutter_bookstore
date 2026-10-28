@@ -20,14 +20,15 @@ class AdminDashboardScreen extends ConsumerWidget {
       body: FutureBuilder<AdminDashboardStats>(
         future: adminRepo.getDashboardStats(),
         builder: (context, snapshot) {
-          final stats =
-              snapshot.data ??
-              const AdminDashboardStats(
-                totalRevenue: 12450.0,
-                totalOrders: 144,
-                totalBooks: 21,
-                totalUsers: 323,
-              );
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Unable to load dashboard: ${snapshot.error}'),
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final stats = snapshot.data!;
 
           return ListView(
             physics: const BouncingScrollPhysics(),
@@ -54,7 +55,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Demo Mode: Simulated admin operations. Real authorization is managed by backend services.',
+                        'Inventory, orders, and customer records are synced with Firestore.',
                         style: BookstoreTokens.body(
                           fontSize: 12,
                           color: BookstoreTokens.primaryDark,
@@ -88,8 +89,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                 children: [
                   _StatCard(
                     title: 'Total Revenue',
-                    value: '\$${stats.totalRevenue.toStringAsFixed(0)}',
-                    subtext: '+${stats.growthRate}% this month',
+                    value: '\$${stats.totalRevenue.toStringAsFixed(2)}',
+                    subtext: 'Collected on delivered orders',
                     icon: Icons.payments_outlined,
                   ),
                   _StatCard(
@@ -146,6 +147,14 @@ class AdminDashboardScreen extends ConsumerWidget {
                 onTap: () => context.push('/admin/users'),
               ),
 
+              const SizedBox(height: 30),
+              _AdminModuleCard(
+                title: 'Store Settings',
+                description:
+                    'Set shipping fees, free-shipping policy and tax rate',
+                icon: Icons.tune_rounded,
+                onTap: () => context.push('/admin/settings'),
+              ),
               const SizedBox(height: 30),
             ],
           );

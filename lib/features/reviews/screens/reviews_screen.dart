@@ -1,3 +1,5 @@
+import '../../../core/utils/store_action.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -81,14 +83,20 @@ class _ReviewsScreenState extends ConsumerState<ReviewsScreen> {
                 onPressed: () async {
                   if (commentController.text.trim().isEmpty) return;
                   final user = ref.read(authRepositoryProvider).currentUser;
-                  await ref
-                      .read(reviewRepositoryProvider)
-                      .addReview(
-                        bookId: widget.bookId,
-                        userName: user?.fullName ?? 'Alex Morgan',
-                        rating: selectedRating,
-                        comment: commentController.text.trim(),
-                      );
+                  if (!await storeAction(
+                    context,
+                    ref,
+                    () => ref
+                        .read(reviewRepositoryProvider)
+                        .addReview(
+                          bookId: widget.bookId,
+                          userName: user?.fullName ?? '',
+                          rating: selectedRating,
+                          comment: commentController.text.trim(),
+                        ),
+                  )) {
+                    return;
+                  }
                   if (ctx.mounted) {
                     Navigator.pop(ctx);
                     setState(() {});
@@ -122,15 +130,28 @@ class _ReviewsScreenState extends ConsumerState<ReviewsScreen> {
         ),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (books) {
-          final book = books.firstWhere(
-            (b) => b.id == widget.bookId,
-            orElse: () => books.first,
-          );
+          final book = books.where((b) => b.id == widget.bookId).firstOrNull;
+          if (book == null) {
+            return Scaffold(
+              appBar: AppBar(title: const Text('Book unavailable')),
+              body: const Center(
+                child: Text('This book is no longer available.'),
+              ),
+            );
+          }
 
           return FutureBuilder<List<ReviewItem>>(
             future: reviewRepo.getReviewsForBook(book.id),
             builder: (context, snapshot) {
-              final reviews = snapshot.data ?? [];
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text('Unable to load reviews: ${snapshot.error}'),
+                );
+              }
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final reviews = snapshot.data!;
 
               return ListView(
                 physics: const BouncingScrollPhysics(),
@@ -169,8 +190,10 @@ class _ReviewsScreenState extends ConsumerState<ReviewsScreen> {
                             children: [
                               Row(
                                 children: List.generate(5, (i) {
-                                  return const Icon(
-                                    Icons.star_rounded,
+                                  return Icon(
+                                    i < book.rating.round()
+                                        ? Icons.star_rounded
+                                        : Icons.star_border_rounded,
                                     size: 16,
                                     color: BookstoreTokens.rating,
                                   );
